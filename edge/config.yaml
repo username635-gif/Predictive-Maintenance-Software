@@ -1,0 +1,40 @@
+# ReliabilityOS Edge Gateway Configuration
+# Copy to config.yaml and edit for your site
+
+gateway:
+  id: "EG-04"
+  description: "Mile 250 Remote Station — Permian Basin Pipeline"
+  location:
+    lat: 32.12
+    lng: -101.78
+    mile_marker: 250
+
+mqtt:
+  host: "localhost"
+  port: 1883
+  keepalive: 60
+  tls: false
+
+cloud:
+  api_url: "https://reliabilityos.example.com"
+  sync_interval_seconds: 30
+  timeout_seconds: 10
+  retry_limit: 3
+
+database:
+  path: "gateway_buffer.db"
+  max_buffer_rows: 100000
+
+sensors:
+  poll_interval_seconds: 5
+  types:
+    - ultrasonic_thickness
+    - pressure_transmitter
+    - acoustic_emission
+    - cathodic_protection
+    - flow_meter
+
+alarms:
+  local_panel_modbus: false
+  modbus_host: "192.168.1.50"
+  modbus_port: 502

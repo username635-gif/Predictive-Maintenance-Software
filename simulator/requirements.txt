@@ -1,0 +1,4 @@
+paho-mqtt==2.1.0
+numpy==1.26.4
+python-dotenv==1.0.1
+structlog==24.2.0

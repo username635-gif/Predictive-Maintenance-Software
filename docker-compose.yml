@@ -1,0 +1,176 @@
+version: "3.9"
+
+# ReliabilityOS — full-stack docker compose
+# Usage:
+#   docker compose up -d           # start everything
+#   docker compose up frontend     # frontend only
+#   docker compose logs -f api     # stream API logs
+#   docker compose down -v         # stop + remove volumes
+
+services:
+  # ─── Message Broker ─────────────────────────────────────────────────────────
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: reliabilityos-mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"   # WebSocket for browser MQTT clients
+    volumes:
+      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt-data:/mosquitto/data
+      - mqtt-log:/mosquitto/log
+    restart: unless-stopped
+    networks:
+      - backend
+
+  # ─── Time-series Database ────────────────────────────────────────────────────
+  influxdb:
+    image: influxdb:2.7
+    container_name: reliabilityos-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER:-admin}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASSWORD:-reliabilityos123}
+      - DOCKER_INFLUXDB_INIT_ORG=reliabilityos
+      - DOCKER_INFLUXDB_INIT_BUCKET=sensor_data
+      - DOCKER_INFLUXDB_INIT_RETENTION=365d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN:-dev-token-change-in-prod}
+    volumes:
+      - influx-data:/var/lib/influxdb2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # ─── Relational Database ─────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: reliabilityos-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-reliabilityos}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-reliabilityos123}
+      - POSTGRES_DB=reliabilityos
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d reliabilityos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # ─── Node.js API ─────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend/api
+      dockerfile: Dockerfile
+    container_name: reliabilityos-api
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - FRONTEND_URL=http://localhost:5173
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-reliabilityos}:${POSTGRES_PASSWORD:-reliabilityos123}@postgres:5432/reliabilityos
+      - INFLUX_URL=http://influxdb:8086
+      - INFLUX_TOKEN=${INFLUX_TOKEN:-dev-token-change-in-prod}
+      - INFLUX_ORG=reliabilityos
+      - INFLUX_BUCKET=sensor_data
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - AI_SERVICE_URL=http://ai:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - backend
+      - frontend
+
+  # ─── Python AI / ML Service ───────────────────────────────────────────────────
+  ai:
+    build:
+      context: ./backend/ai
+      dockerfile: Dockerfile
+    container_name: reliabilityos-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WORKERS=2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - backend
+
+  # ─── Data Simulator ─────────────────────────────────────────────────────────
+  simulator:
+    build:
+      context: ./simulator
+      dockerfile: Dockerfile
+    container_name: reliabilityos-simulator
+    environment:
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - PUBLISH_INTERVAL_S=2
+      - SCENARIO=${SIMULATOR_SCENARIO:-}   # e.g. "leak_active"
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+    profiles:
+      - simulator   # opt-in: docker compose --profile simulator up -d
+    networks:
+      - backend
+
+  # ─── React Frontend (dev server) ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: reliabilityos-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+      - VITE_WS_URL=ws://localhost:8080
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - frontend
+
+# ─── Volumes ────────────────────────────────────────────────────────────────
+volumes:
+  mqtt-data:
+  mqtt-log:
+  influx-data:
+  pg-data:
+
+# ─── Networks ────────────────────────────────────────────────────────────────
+networks:
+  backend:
+  frontend:

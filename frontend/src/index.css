@@ -1,0 +1,237 @@
+/* ─── ReliabilityOS Design System ─────────────────────────────────────────── */
+
+:root {
+  /* Palette */
+  --bg-main:        #0A0E17;
+  --bg-panel:       #1E1E1E;
+  --bg-panel-alt:   #252830;
+  --bg-hover:       #2A2D36;
+  --bg-active:      #303540;
+  --border:         #2D2D2D;
+  --border-light:   #3A3D48;
+
+  /* Text */
+  --text-primary:   #E0E0E0;
+  --text-secondary: #9E9E9E;
+  --text-muted:     #6B6E7A;
+  --text-inverse:   #0A0E17;
+
+  /* Status colours */
+  --color-good:     #2ECC40;
+  --color-warning:  #FFDC00;
+  --color-alert:    #FF851B;
+  --color-critical: #FF4136;
+  --color-info:     #0078D4;
+  --color-offline:  #595959;
+  --color-purple:   #9B53D4;
+
+  /* Semantic */
+  --color-good-dim:     rgba(46,204,64,0.15);
+  --color-warning-dim:  rgba(255,220,0,0.15);
+  --color-critical-dim: rgba(255,65,54,0.15);
+  --color-info-dim:     rgba(0,120,212,0.15);
+
+  /* Buttons */
+  --btn-primary:    #0078D4;
+  --btn-secondary:  #2D2D2D;
+  --btn-destruct:   #FF4136;
+  --btn-height:     44px;
+  --btn-radius:     4px;
+
+  /* Typography */
+  --font-mono:      'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 4px rgba(0,0,0,0.5);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.6);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.7);
+  --shadow-glow-red:    0 0 16px rgba(255,65,54,0.4);
+  --shadow-glow-yellow: 0 0 16px rgba(255,220,0,0.3);
+
+  /* Layout */
+  --topbar-height: 56px;
+  --banner-height: 40px;
+}
+
+/* ─── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  max-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Scrollbars ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-panel); }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4A4D58; }
+
+/* ─── Typography ───────────────────────────────────────────────────────────── */
+h1 { font-size: 20px; font-weight: 700; }
+h2 { font-size: 16px; font-weight: 600; }
+h3 { font-size: 14px; font-weight: 600; }
+h4 { font-size: 13px; font-weight: 600; }
+
+.mono { font-family: var(--font-mono); }
+.text-muted { color: var(--text-muted); }
+.text-secondary { color: var(--text-secondary); }
+.text-good    { color: var(--color-good); }
+.text-warning { color: var(--color-warning); }
+.text-critical { color: var(--color-critical); }
+
+/* ─── Buttons ──────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--btn-height);
+  min-width: var(--btn-height);
+  padding: 0 16px;
+  border-radius: var(--btn-radius);
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  user-select: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.btn-primary   { background: var(--btn-primary); color: #fff; }
+.btn-primary:hover:not(:disabled)   { background: #106EBE; }
+
+.btn-secondary { background: var(--btn-secondary); color: var(--text-primary); border: 1px solid var(--border-light); }
+.btn-secondary:hover:not(:disabled) { background: var(--bg-hover); }
+
+.btn-destruct  { background: var(--btn-destruct); color: #fff; }
+.btn-destruct:hover:not(:disabled)  { background: #E8342A; }
+
+.btn-ghost     { background: transparent; color: var(--text-secondary); border: 1px solid transparent; }
+.btn-ghost:hover:not(:disabled)     { background: var(--bg-hover); border-color: var(--border); }
+
+.btn-icon {
+  width: 36px; min-width: 36px;
+  height: 36px; padding: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+}
+.btn-icon:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
+
+.btn-sm { height: 32px; min-width: 32px; padding: 0 10px; font-size: 13px; }
+
+/* ─── Badges ───────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.badge-good     { background: var(--color-good-dim);     color: var(--color-good); }
+.badge-warning  { background: var(--color-warning-dim);  color: var(--color-warning); }
+.badge-critical { background: var(--color-critical-dim); color: var(--color-critical); }
+.badge-info     { background: var(--color-info-dim);     color: var(--color-info); }
+.badge-offline  { background: rgba(89,89,89,0.25);       color: var(--color-offline); }
+
+/* ─── Health Dot ───────────────────────────────────────────────────────────── */
+.health-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.health-dot.good     { background: var(--color-good); }
+.health-dot.warning  { background: var(--color-warning); }
+.health-dot.critical { background: var(--color-critical); box-shadow: var(--shadow-glow-red); }
+
+/* ─── Cards / Panels ───────────────────────────────────────────────────────── */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-body { padding: 14px; }
+
+/* ─── Dividers ─────────────────────────────────────────────────────────────── */
+.divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+/* ─── Tags ─────────────────────────────────────────────────────────────────── */
+.tag {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px;
+  background: var(--bg-active);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* ─── Leaflet overrides ────────────────────────────────────────────────────── */
+.leaflet-container {
+  background: var(--bg-main) !important;
+  font-family: inherit !important;
+  overflow: hidden !important;
+}
+.leaflet-control-zoom a {
+  background: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+.leaflet-popup-content-wrapper {
+  background: var(--bg-panel) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 6px !important;
+  box-shadow: var(--shadow-md) !important;
+}
+.leaflet-popup-tip { background: var(--bg-panel) !important; }
+.leaflet-popup-close-button { color: var(--text-secondary) !important; }
+
+/* ─── Animations ───────────────────────────────────────────────────────────── */
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,65,54,0.5); }
+  50%       { box-shadow: 0 0 0 12px rgba(255,65,54,0); }
+}
+@keyframes pulse-yellow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,220,0,0.45); }
+  50%       { box-shadow: 0 0 0 10px rgba(255,220,0,0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fade-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes roi-tick { 0% { transform: scale(1); } 50% { transform: scale(1.04); } 100% { transform: scale(1); } }
+
+.animate-pulse-red    { animation: pulse-red    2s ease-in-out infinite; }
+.animate-pulse-yellow { animation: pulse-yellow 2s ease-in-out infinite; }
+.animate-spin         { animation: spin         1s linear infinite; }
+.animate-fade-in      { animation: fade-in      0.3s ease-out; }
+
+/* ─── Recharts overrides ───────────────────────────────────────────────────── */
+.recharts-default-tooltip {
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 4px !important;
+  padding: 8px 12px !important;
+}
+.recharts-tooltip-label { color: var(--text-secondary) !important; }
