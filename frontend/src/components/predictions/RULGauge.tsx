@@ -16,7 +16,7 @@ export const RULGauge: React.FC<RULGaugeProps> = ({ days, lower, upper, size = 1
   const pct = Math.min(days / MAX_DAYS, 1);
 
   const cx = size / 2;
-  const cy = size / 2 + 10;
+  const cy = size / 2 + 4;
   const r  = size * 0.38;
   const startAngle = -210;
   const endAngle   = 30;
@@ -47,7 +47,7 @@ export const RULGauge: React.FC<RULGaugeProps> = ({ days, lower, upper, size = 1
   const label = days === 0 ? 'NOW' : `${days}d`;
 
   return (
-    <svg width={size} height={size * 0.75} viewBox={`0 0 ${size} ${size * 0.75}`}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       {/* Track */}
       <path d={trackPath} fill="none" stroke="#2D2D2D" strokeWidth={6} strokeLinecap="round" />
 

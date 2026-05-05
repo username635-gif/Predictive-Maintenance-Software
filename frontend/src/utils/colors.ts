@@ -1,10 +1,10 @@
 import type { HealthStatus } from '../types';
 
 export const HEALTH_COLORS: Record<HealthStatus, string> = {
-  good:    '#2ECC40',
-  warning: '#FFDC00',
-  critical:'#FF4136',
-  unknown: '#595959',
+  good:    '#30A46C',
+  warning: '#FFD00A',
+  critical:'#E5484D',
+  unknown: '#5A5F66',
 };
 
 export function healthColor(score: number): string {
@@ -23,31 +23,31 @@ export function healthStatusFromScore(score: number): HealthStatus {
 
 export function severityColor(sev: string): string {
   switch (sev) {
-    case 'critical': return '#FF4136';
-    case 'high':     return '#FF851B';
-    case 'medium':   return '#FFDC00';
-    case 'low':      return '#2ECC40';
-    default:         return '#595959';
+    case 'critical': return '#E5484D';
+    case 'high':     return '#F76808';
+    case 'medium':   return '#FFD00A';
+    case 'low':      return '#30A46C';
+    default:         return '#5A5F66';
   }
 }
 
 export function priorityColor(p: string): string {
   switch (p) {
-    case 'critical': return '#FF4136';
-    case 'high':     return '#FF851B';
-    case 'medium':   return '#FFDC00';
-    case 'low':      return '#2ECC40';
-    default:         return '#595959';
+    case 'critical': return '#E5484D';
+    case 'high':     return '#F76808';
+    case 'medium':   return '#FFD00A';
+    case 'low':      return '#30A46C';
+    default:         return '#5A5F66';
   }
 }
 
 export function statusColor(s: string): string {
   switch (s) {
-    case 'completed':  return '#2ECC40';
-    case 'in_progress':return '#0078D4';
-    case 'pending':    return '#FFDC00';
-    case 'draft':      return '#9E9E9E';
-    case 'cancelled':  return '#595959';
+    case 'completed':  return '#30A46C';
+    case 'in_progress':return '#0090FF';
+    case 'pending':    return '#FFD00A';
+    case 'draft':      return '#858C94';
+    case 'cancelled':  return '#5A5F66';
     default:           return '#595959';
   }
 }

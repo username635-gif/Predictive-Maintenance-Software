@@ -31,7 +31,7 @@ function SensorDots({ segmentId }: { segmentId: string }) {
           center={[sensor.lat, sensor.lng]}
           radius={sensor.status === 'offline' ? 4 : 3}
           pathOptions={{
-            fillColor: sensor.status === 'offline' ? '#595959' : sensor.status === 'degraded' ? '#FF851B' : '#0078D4',
+            fillColor: sensor.status === 'offline' ? '#5A5F66' : sensor.status === 'degraded' ? '#F76808' : '#0090FF',
             fillOpacity: 0.9,
             weight: 0,
             color: 'transparent',
@@ -39,20 +39,20 @@ function SensorDots({ segmentId }: { segmentId: string }) {
         >
           <Popup>
             <div style={{ minWidth: '180px', fontSize: '12px' }}>
-              <b style={{ color: '#E0E0E0' }}>{sensor.name}</b>
+              <b style={{ color: '#E8ECEF' }}>{sensor.name}</b>
               <div style={{ color: '#9E9E9E', marginTop: '2px' }}>{sensor.type.replace(/_/g, ' ')}</div>
-              <div style={{ color: '#9E9E9E' }}>Mile {sensor.mile_marker}</div>
-              <hr style={{ border: 'none', borderTop: '1px solid #2D2D2D', margin: '6px 0' }} />
+              <div style={{ color: '#858C94' }}>Mile {sensor.mile_marker}</div>
+              <hr style={{ border: 'none', borderTop: '1px solid #3A3F44', margin: '6px 0' }} />
               <div>
-                <span style={{ color: '#9E9E9E' }}>Last: </span>
-                <span style={{ color: '#E0E0E0', fontFamily: 'monospace' }}>
+                <span style={{ color: '#858C94' }}>Last: </span>
+                <span style={{ color: '#E8ECEF', fontFamily: 'monospace' }}>
                   {sensor.last_reading?.value.toFixed(2)} {sensor.unit}
                 </span>
               </div>
               <div>
-                <span style={{ color: '#9E9E9E' }}>Status: </span>
+                <span style={{ color: '#858C94' }}>Status: </span>
                 <span style={{
-                  color: sensor.status === 'online' ? '#2ECC40' : sensor.status === 'degraded' ? '#FF851B' : '#595959'
+                  color: sensor.status === 'online' ? '#30A46C' : sensor.status === 'degraded' ? '#F76808' : '#5A5F66'
                 }}>
                   {sensor.status}
                 </span>
@@ -77,8 +77,8 @@ function AlertMarkers() {
           center={[alert.location!.lat, alert.location!.lng]}
           radius={alert.location!.radius_m / 5000 * 40 + 14}
           pathOptions={{
-            color: '#FF4136',
-            fillColor: '#FF4136',
+            color: '#E5484D',
+            fillColor: '#E5484D',
             fillOpacity: 0.15,
             weight: 2,
             dashArray: '6 4',
@@ -87,14 +87,14 @@ function AlertMarkers() {
           <CircleMarker
             center={[alert.location!.lat, alert.location!.lng]}
             radius={8}
-            pathOptions={{ fillColor: '#FF4136', fillOpacity: 0.9, weight: 0 }}
+            pathOptions={{ fillColor: '#E5484D', fillOpacity: 0.9, weight: 0 }}
           >
             <Popup>
               <div style={{ minWidth: '200px', fontSize: '12px' }}>
-                <b style={{ color: '#FF4136' }}>⚠ {alert.type.replace(/_/g, ' ').toUpperCase()}</b>
-                <p style={{ color: '#E0E0E0', marginTop: '4px' }}>{alert.message}</p>
+                <b style={{ color: '#E5484D' }}>⚠ {alert.type.replace(/_/g, ' ').toUpperCase()}</b>
+                <p style={{ color: '#E8ECEF', marginTop: '4px' }}>{alert.message}</p>
                 <div style={{ color: '#9E9E9E', marginTop: '4px' }}>
-                  Confidence: <strong style={{ color: '#FFDC00' }}>{Math.round(alert.confidence * 100)}%</strong>
+                  Confidence: <strong style={{ color: '#FFD00A' }}>{Math.round(alert.confidence * 100)}%</strong>
                 </div>
               </div>
             </Popup>
@@ -118,7 +118,7 @@ export const PipelineMap: React.FC = () => {
         minZoom={5}
         maxBounds={[[20, -115], [45, -88]]}
         maxBoundsViscosity={0.8}
-        style={{ width: '100%', height: '100%', background: '#0A0E17' }}
+        style={{ width: '100%', height: '100%', background: '#1A1C1E' }}
         zoomControl
         ref={mapRef}
       >
@@ -168,24 +168,24 @@ export const PipelineMap: React.FC = () => {
               >
                 <Popup>
                   <div style={{ minWidth: '220px', fontSize: '12px' }}>
-                    <div style={{ fontWeight: 700, fontSize: '13px', color: '#E0E0E0', marginBottom: '6px' }}>
+                      <div style={{ fontWeight: 700, fontSize: '13px', color: '#E8ECEF', marginBottom: '6px' }}>
                       {seg.name}
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
                       <span style={{ color: '#9E9E9E' }}>Health</span>
                       <span style={{ color, fontWeight: 700 }}>{seg.health_score}%</span>
                       <span style={{ color: '#9E9E9E' }}>Wall Thick.</span>
-                      <span style={{ color: '#E0E0E0', fontFamily: 'monospace' }}>{seg.wall_thickness_mm} mm</span>
+                      <span style={{ color: '#E8ECEF', fontFamily: 'monospace' }}>{seg.wall_thickness_mm} mm</span>
                       <span style={{ color: '#9E9E9E' }}>Pressure</span>
-                      <span style={{ color: '#E0E0E0', fontFamily: 'monospace' }}>{seg.operating_pressure_psi} PSI</span>
+                      <span style={{ color: '#E8ECEF', fontFamily: 'monospace' }}>{seg.operating_pressure_psi} PSI</span>
                       {prediction && (
                         <>
                           <span style={{ color: '#9E9E9E' }}>RUL</span>
-                          <span style={{ color: prediction.rul_days < 30 ? '#FF4136' : '#FFDC00', fontWeight: 600 }}>
+                          <span style={{ color: prediction.rul_days < 30 ? '#E5484D' : '#FFD00A', fontWeight: 600 }}>
                             {prediction.rul_days === 0 ? 'NOW' : `${prediction.rul_days}d`}
                           </span>
                           <span style={{ color: '#9E9E9E' }}>Risk</span>
-                          <span style={{ color: '#FF851B' }}>{Math.round(prediction.anomaly_score * 100)}%</span>
+                          <span style={{ color: '#F76808' }}>{Math.round(prediction.anomaly_score * 100)}%</span>
                         </>
                       )}
                       {seg.last_pig_run && (

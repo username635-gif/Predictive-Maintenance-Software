@@ -48,7 +48,7 @@ export const OfflineBanner: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{
             background: 'rgba(255,220,0,0.15)', border: '1px solid rgba(255,220,0,0.35)',
-            borderRadius: '3px', padding: '2px 8px', fontSize: '11px', color: '#FFDC00',
+            borderRadius: '3px', padding: '2px 8px', fontSize: '11px', color: '#FFD00A',
           }}>
             {pendingSyncCount} work order{pendingSyncCount > 1 ? 's' : ''} queued
           </span>

@@ -13,14 +13,14 @@ export const SensorSparkline: React.FC<SparklineProps> = ({ sensor }) => {
        sensor.last_reading.value > sensor.normal_range[1])
     : false;
 
-  const color = sensor.status === 'offline' ? '#595959' :
-                isOutOfRange ? '#FF4136' :
-                sensor.status === 'degraded' ? '#FF851B' : '#0078D4';
+  const color = sensor.status === 'offline' ? '#5A5F66' :
+                isOutOfRange ? '#E5484D' :
+                sensor.status === 'degraded' ? '#F76808' : '#0090FF';
 
   return (
     <div style={{
       background: '#1A1C23',
-      border: `1px solid ${isOutOfRange ? '#FF413630' : 'var(--border)'}`,
+      border: `1px solid ${isOutOfRange ? '#E5484D30' : 'var(--border)'}`,
       borderRadius: '5px',
       padding: '8px 10px',
     }}>
@@ -41,7 +41,7 @@ export const SensorSparkline: React.FC<SparklineProps> = ({ sensor }) => {
           </div>
           <div style={{
             fontSize: '9px',
-            color: sensor.status === 'online' ? '#2ECC40' : '#FF851B',
+            color: sensor.status === 'online' ? '#30A46C' : '#F76808',
           }}>
             {sensor.status}
           </div>
@@ -65,7 +65,7 @@ export const SensorSparkline: React.FC<SparklineProps> = ({ sensor }) => {
                 background: '#252830', border: '1px solid #3A3D48',
                 borderRadius: '4px', padding: '4px 8px', fontSize: '10px',
               }}
-              itemStyle={{ color: '#E0E0E0' }}
+              itemStyle={{ color: '#E8ECEF' }}
               formatter={(v: number) => [`${v.toFixed(2)} ${sensor.unit}`, '']}
               labelFormatter={() => ''}
             />
@@ -79,7 +79,7 @@ export const SensorSparkline: React.FC<SparklineProps> = ({ sensor }) => {
           Normal: {sensor.normal_range[0]}–{sensor.normal_range[1]} {sensor.unit}
         </span>
         {isOutOfRange && (
-          <span style={{ fontSize: '9px', color: '#FF4136', fontWeight: 600 }}>OUT OF RANGE</span>
+          <span style={{ fontSize: '9px', color: '#E5484D', fontWeight: 600 }}>OUT OF RANGE</span>
         )}
       </div>
     </div>

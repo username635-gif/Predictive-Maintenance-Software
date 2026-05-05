@@ -4,9 +4,9 @@ import { healthColor } from '../../utils/colors';
 import { AlertTriangle, CheckCircle, Clock, ChevronRight } from 'lucide-react';
 
 function healthIcon(status: string, size = 14): React.ReactNode {
-  if (status === 'critical') return <AlertTriangle size={size} color="#FF4136" />;
-  if (status === 'warning')  return <AlertTriangle size={size} color="#FFDC00" />;
-  return <CheckCircle size={size} color="#2ECC40" />;
+  if (status === 'critical') return <AlertTriangle size={size} color="#E5484D" />;
+  if (status === 'warning')  return <AlertTriangle size={size} color="#FFD00A" />;
+  return <CheckCircle size={size} color="#30A46C" />;
 }
 
 export const AssetList: React.FC = () => {
@@ -37,9 +37,9 @@ export const AssetList: React.FC = () => {
         {/* Summary row */}
         <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
           {[
-            { label: 'Critical', count: segments.filter(s => s.health_status === 'critical').length, color: '#FF4136' },
-            { label: 'Warning',  count: segments.filter(s => s.health_status === 'warning').length,  color: '#FFDC00' },
-            { label: 'Good',     count: segments.filter(s => s.health_status === 'good').length,     color: '#2ECC40' },
+            { label: 'Critical', count: segments.filter(s => s.health_status === 'critical').length, color: '#E5484D' },
+            { label: 'Warning',  count: segments.filter(s => s.health_status === 'warning').length,  color: '#FFD00A' },
+            { label: 'Good',     count: segments.filter(s => s.health_status === 'good').length,     color: '#30A46C' },
           ].map(({ label, count, color }) => (
             <div key={label} style={{
               flex: 1, textAlign: 'center',
@@ -57,10 +57,10 @@ export const AssetList: React.FC = () => {
       {/* Active alert strip */}
       {activeAlerts.length > 0 && (
         <div style={{
-          padding: '6px 12px', background: 'rgba(255,65,54,0.1)',
-          borderBottom: '1px solid rgba(255,65,54,0.25)', flexShrink: 0,
+          padding: '6px 12px', background: 'rgba(229,72,77,0.1)',
+          borderBottom: '1px solid rgba(229,72,77,0.25)', flexShrink: 0,
         }}>
-          <div style={{ fontSize: '11px', color: '#FF4136', fontWeight: 600, marginBottom: '4px' }}>
+          <div style={{ fontSize: '11px', color: '#E5484D', fontWeight: 600, marginBottom: '4px' }}>
             ● {activeAlerts.length} ACTIVE ALERT{activeAlerts.length > 1 ? 'S' : ''}
           </div>
           {activeAlerts.slice(0, 2).map(a => (
@@ -117,7 +117,7 @@ export const AssetList: React.FC = () => {
                   {segAlerts.length > 0 && (
                     <span className="animate-pulse-red" style={{
                       marginLeft: '6px', width: '6px', height: '6px',
-                      display: 'inline-block', borderRadius: '50%', background: '#FF4136',
+                      display: 'inline-block', borderRadius: '50%', background: '#E5484D',
                     }} />
                   )}
                 </div>
@@ -131,7 +131,7 @@ export const AssetList: React.FC = () => {
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700, color }}>
                   {seg.health_score}%
                 </div>
-                <div style={{ fontSize: '10px', color: pred?.severity === 'critical' ? '#FF4136' : 'var(--text-muted)' }}>
+                <div style={{ fontSize: '10px', color: pred?.severity === 'critical' ? '#E5484D' : 'var(--text-muted)' }}>
                   {pred ? (
                     pred.rul_days === 0 ? 'ACTIVE' : `${pred.rul_days}d RUL`
                   ) : (

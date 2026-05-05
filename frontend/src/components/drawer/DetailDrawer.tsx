@@ -106,8 +106,8 @@ export const DetailDrawer: React.FC = () => {
               flex: 1, padding: '8px 4px',
               background: 'transparent', border: 'none', cursor: 'pointer',
               fontSize: '11px', fontWeight: 600,
-              color: tab === t ? '#0078D4' : 'var(--text-muted)',
-              borderBottom: `2px solid ${tab === t ? '#0078D4' : 'transparent'}`,
+              color: tab === t ? '#0090FF' : 'var(--text-muted)',
+              borderBottom: `2px solid ${tab === t ? '#0090FF' : 'transparent'}`,
               textTransform: 'capitalize' as const,
               transition: 'color 0.15s',
             }}
@@ -125,8 +125,8 @@ export const DetailDrawer: React.FC = () => {
             {/* Quick Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
               {[
-                { icon: <Thermometer size={12} />, label: 'Wall Thick.', value: `${segment.wall_thickness_mm} mm`, color: segment.wall_thickness_mm < 10 ? '#FF4136' : '#E0E0E0' },
-                { icon: <Activity size={12} />, label: 'Pressure', value: `${segment.operating_pressure_psi} PSI`, color: '#E0E0E0' },
+                { icon: <Thermometer size={12} />, label: 'Wall Thick.', value: `${segment.wall_thickness_mm} mm`, color: segment.wall_thickness_mm < 10 ? '#E5484D' : '#E8ECEF' },
+                { icon: <Activity size={12} />, label: 'Pressure', value: `${segment.operating_pressure_psi} PSI`, color: '#E8ECEF' },
                 { icon: <Clock size={12} />, label: 'Last PIG', value: segment.last_pig_run ?? 'None', color: '#9E9E9E' },
                 { icon: <Clock size={12} />, label: 'Next PIG', value: segment.next_pig_due ?? 'N/A', color: '#9E9E9E' },
               ].map(({ icon, label, value, color: vc }) => (
@@ -154,7 +154,7 @@ export const DetailDrawer: React.FC = () => {
                 border: '1px solid rgba(46,204,64,0.25)', borderRadius: '6px',
                 textAlign: 'center',
               }}>
-                <div style={{ color: '#2ECC40', fontWeight: 600, fontSize: '12px', marginBottom: '4px' }}>
+                <div style={{ color: '#30A46C', fontWeight: 600, fontSize: '12px', marginBottom: '4px' }}>
                   ✓ No anomalies detected
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>

@@ -53,7 +53,7 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
           flexShrink: 0, background: '#1A1C23',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Wrench size={16} color="#0078D4" />
+            <Wrench size={16} color="#0090FF" />
             <h2>Work Orders</h2>
             {isOffline && (
               <span className="badge badge-offline">Offline – Changes queued</span>
@@ -73,7 +73,7 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
             padding: '14px 18px', borderBottom: '1px solid var(--border)',
             background: 'rgba(0,120,212,0.05)', flexShrink: 0,
           }}>
-            <h3 style={{ marginBottom: '10px', color: '#0078D4' }}>New Work Order</h3>
+            <h3 style={{ marginBottom: '10px', color: '#0090FF' }}>New Work Order</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div style={{ gridColumn: '1/-1' }}>
                 <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '3px' }}>Title *</label>
@@ -169,8 +169,8 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
               style={{
                 padding: '8px 12px', background: 'transparent', border: 'none',
                 cursor: 'pointer', fontSize: '12px', fontWeight: 600,
-                color: filter === key ? '#0078D4' : 'var(--text-muted)',
-                borderBottom: `2px solid ${filter === key ? '#0078D4' : 'transparent'}`,
+                color: filter === key ? '#0090FF' : 'var(--text-muted)',
+                borderBottom: `2px solid ${filter === key ? '#0090FF' : 'transparent'}`,
               }}
             >
               {label}
@@ -267,7 +267,7 @@ const WORow: React.FC<{
                     <span style={{ color: 'var(--text-secondary)' }}>{p.description}</span>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>×{p.quantity}</span>
-                      <span style={{ color: p.in_stock ? '#2ECC40' : '#FF4136', fontSize: '10px' }}>
+                      <span style={{ color: p.in_stock ? '#30A46C' : '#E5484D', fontSize: '10px' }}>
                         {p.in_stock ? '✓ In stock' : '✗ Order req.'}
                       </span>
                     </div>

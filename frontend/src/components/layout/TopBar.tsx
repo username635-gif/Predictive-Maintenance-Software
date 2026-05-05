@@ -20,7 +20,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   const {
     isOffline, connectivity, getActiveAlerts, getTotalROI,
     viewMode, setViewMode, toggleSimulateOffline, pendingSyncCount,
-    triggerLeakSimulation
+    triggerLeakSimulation, openModal,
   } = useStore();
   const activeAlerts = getActiveAlerts();
   const totalROI = getTotalROI();
@@ -40,12 +40,12 @@ export const TopBar: React.FC<TopBarProps> = ({
     }}>
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }}>
-        <Activity size={20} color="#0078D4" />
-        <span style={{ fontWeight: 700, fontSize: '15px', color: '#E0E0E0' }}>
-          Reliability<span style={{ color: '#0078D4' }}>OS</span>
+        <Activity size={20} color="#0090FF" />
+        <span style={{ fontWeight: 700, fontSize: '15px', color: '#E8ECEF' }}>
+          Reliability<span style={{ color: '#0090FF' }}>OS</span>
         </span>
         <span style={{
-          fontSize: '10px', color: '#6B6E7A', background: '#1E1E1E',
+          fontSize: '10px', color: '#5A6069', background: '#25282B',
           border: '1px solid #2D2D2D', borderRadius: '2px', padding: '1px 5px',
           fontFamily: 'var(--font-mono)'
         }}>PERMIAN 500</span>
@@ -63,7 +63,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           onClick={() => setViewMode('map')}
           style={{
             borderRadius: 0, border: 'none', gap: '4px', height: '32px',
-            background: viewMode === 'map' ? '#0078D4' : 'transparent',
+            background: viewMode === 'map' ? '#0090FF' : 'transparent',
             color: viewMode === 'map' ? '#fff' : 'var(--text-secondary)',
           }}
         >
@@ -74,7 +74,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           onClick={() => setViewMode('longitudinal')}
           style={{
             borderRadius: 0, border: 'none', gap: '4px', height: '32px',
-            background: viewMode === 'longitudinal' ? '#0078D4' : 'transparent',
+            background: viewMode === 'longitudinal' ? '#0090FF' : 'transparent',
             color: viewMode === 'longitudinal' ? '#fff' : 'var(--text-secondary)',
           }}
         >
@@ -89,18 +89,18 @@ export const TopBar: React.FC<TopBarProps> = ({
         onClick={onOpenROI}
         style={{
           display: 'flex', alignItems: 'center', gap: '8px',
-          background: 'rgba(46,204,64,0.1)', border: '1px solid rgba(46,204,64,0.25)',
+          background: 'rgba(48,164,108,0.1)', border: '1px solid rgba(48,164,108,0.25)',
           borderRadius: '4px', padding: '0 12px', height: '36px',
           cursor: 'pointer', color: 'var(--text-primary)',
           transition: 'background 0.15s',
         }}
         title="Click to view ROI breakdown"
       >
-        <BarChart2 size={15} color="#2ECC40" />
+        <BarChart2 size={15} color="#30A46C" />
         <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>ROI:</span>
         <span style={{
           fontFamily: 'var(--font-mono)', fontWeight: 700,
-          fontSize: '16px', color: '#2ECC40',
+          fontSize: '16px', color: '#30A46C',
           animation: 'roi-tick 4s ease-in-out infinite'
         }}>
           {fmtROI(totalROI)}
@@ -120,13 +120,13 @@ export const TopBar: React.FC<TopBarProps> = ({
           transition: 'background 0.15s',
         }}
       >
-        <Bell size={15} color={criticalCount > 0 ? '#FF4136' : '#9E9E9E'} />
+        <Bell size={15} color={criticalCount > 0 ? '#E5484D' : '#858C94'} />
         <span style={{ fontSize: '13px' }}>{activeAlerts.length}</span>
         {criticalCount > 0 && (
           <span className="animate-pulse-red" style={{
             position: 'absolute', top: '-4px', right: '-4px',
             width: '10px', height: '10px', borderRadius: '50%',
-            background: '#FF4136', border: '2px solid #13161F',
+            background: '#E5484D', border: '2px solid #1A1C1E',
           }} />
         )}
       </button>
@@ -153,6 +153,14 @@ export const TopBar: React.FC<TopBarProps> = ({
       </button>
       <button className="btn btn-secondary btn-sm" onClick={onOpenReport} style={{ gap: '5px' }}>
         <FileText size={13} /> Reports
+      </button>
+      <button
+        className="btn btn-sm btn-ghost"
+        onClick={() => openModal('pig')}
+        style={{ gap: '5px', color: 'var(--color-purple)', borderColor: 'rgba(155,83,212,0.35)', fontSize: '11px' }}
+        title="Open PIG run comparison tool"
+      >
+        ◆ PIG Compare
       </button>
 
       <div style={{ width: '1px', height: '28px', background: 'var(--border)' }} />
@@ -194,7 +202,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           className="btn btn-sm btn-ghost"
           onClick={triggerLeakSimulation}
           title="Trigger simulated leak alert"
-          style={{ fontSize: '11px', color: '#FF4136', gap: '4px' }}
+          style={{ fontSize: '11px', color: '#E5484D', gap: '4px' }}
         >
           <AlertTriangle size={12} />
           Sim Leak

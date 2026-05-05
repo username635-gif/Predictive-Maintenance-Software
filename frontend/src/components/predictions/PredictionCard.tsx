@@ -52,13 +52,13 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({ prediction, onCr
       {/* Body */}
       <div style={{ padding: '12px 14px' }}>
         {/* RUL Gauge + root cause */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
           <div style={{ flexShrink: 0 }}>
             <RULGauge
               days={prediction.rul_days}
               lower={prediction.rul_lower}
               upper={prediction.rul_upper}
-              size={90}
+              size={80}
             />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -84,7 +84,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({ prediction, onCr
                     <div style={{
                       height: '100%', borderRadius: '2px',
                       width: `${rc.probability * 100}%`,
-                      background: i === 0 ? color : '#3A3D48',
+                      background: i === 0 ? color : '#454C52',
                       transition: 'width 0.5s ease',
                     }} />
                   </div>
@@ -97,7 +97,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({ prediction, onCr
         {/* Anomaly score */}
         <div style={{
           display: 'flex', gap: '12px', padding: '8px',
-          background: '#1A1C23', borderRadius: '4px', marginBottom: '10px',
+          background: '#1A1C1F', borderRadius: '4px', marginBottom: '10px',
         }}>
           <div style={{ flex: 1, textAlign: 'center' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 700, color }}>
@@ -107,7 +107,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({ prediction, onCr
           </div>
           <div style={{ width: '1px', background: 'var(--border)' }} />
           <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 700, color: '#2ECC40' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 700, color: '#30A46C' }}>
               {Math.round(prediction.confidence * 100)}%
             </div>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Model Confidence</div>
@@ -122,21 +122,26 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({ prediction, onCr
             width: '100%', justifyContent: 'space-between',
             background: showExplain ? 'var(--color-info-dim)' : 'var(--bg-hover)',
             borderColor: showExplain ? 'var(--color-info)' : 'var(--border)',
-            color: 'var(--text-primary)', height: '36px', fontSize: '12px',
+            color: 'var(--text-primary)', minHeight: '36px', height: 'auto',
+            padding: '6px 10px', fontSize: '12px',
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Info size={13} color={showExplain ? '#0078D4' : '#9E9E9E'} />
-            <strong>EXPLAIN</strong> – Why is this segment at risk?
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden' }}>
+            <Info size={13} color={showExplain ? '#0090FF' : '#858C94'} style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <strong>EXPLAIN</strong> – Why is this segment at risk?
+            </span>
           </span>
-          {showExplain ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          <span style={{ flexShrink: 0, marginLeft: '6px' }}>
+            {showExplain ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </span>
         </button>
 
         {/* Explain panel */}
         {showExplain && (
           <div className="animate-fade-in" style={{
             marginTop: '8px', padding: '12px',
-            background: '#131720', borderRadius: '6px',
+            background: '#12141A', borderRadius: '6px',
             border: '1px solid var(--color-info-dim)',
           }}>
             <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-info)', marginBottom: '10px', letterSpacing: '0.5px' }}>
