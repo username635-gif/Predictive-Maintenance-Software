@@ -1,11 +1,9 @@
-# TODO - Predictive Maintenance
+# TODO
 
-- [x] Implement required LoginPage UI (divider, inputs, password toggle, sign-in button, forgot password link, error state, footer outside card) in `frontend/src/screens/SignInPage/SignInPage.tsx`
-
-- [x] Implement DEMO AUTH logic in `SignInPage.tsx` (SSO + email/password validation + error handling/password clearing)
-
-- [x] Fix `AuthGuard` so `/login` stays accessible when logged out in `frontend/src/routes/AuthGuard.tsx`
-
-- [ ] Run `tsc --noEmit` in `frontend/` and fix any TypeScript strict errors
-
+- [ ] Fix TopBar sign-out button overlap with "Sim Leak" indicator.
+  - [ ] Reflow sign-out to the right of "Sim Leak" with 16px gap.
+  - [ ] Remove absolute positioning.
+  - [ ] Add responsive fallback: icon-only logout button (lucide icon, #9BA3B2, 16px, tooltip "Sign out") when horizontal space is constrained.
+  - [ ] Ensure click still clears ros_session and redirects to /login (via existing onSignOut).
+- [ ] Run frontend typecheck/build to verify no TS/React errors.
 

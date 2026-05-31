@@ -4,7 +4,7 @@ import { fmtROI } from '../../utils/formatting';
 import { timeAgo } from '../../utils/formatting';
 import {
   Activity, AlertTriangle, Bell, ChevronDown, Cpu, Wifi, WifiOff,
-  BarChart2, FileText, Wrench, Map, Layers
+  BarChart2, FileText, Wrench, Map, Layers, LogOut
 } from 'lucide-react';
 
 interface TopBarProps {
@@ -160,32 +160,6 @@ export const TopBar: React.FC<TopBarProps> = ({
         <Wrench size={13} /> Work Orders
       </button>
 
-      {onSignOut && (
-        <button
-          onClick={onSignOut}
-          style={{
-            position: 'absolute',
-            top: 10,
-            right: 16,
-            height: 24,
-            minWidth: 0,
-            padding: '0 8px',
-            borderRadius: 4,
-            border: '1px solid transparent',
-            background: 'transparent',
-            color: 'var(--text-muted)',
-            fontSize: 12,
-            cursor: 'pointer',
-          }}
-          title="Sign out"
-        >
-          Sign out
-        </button>
-      )}
-
-      <button className="btn btn-secondary btn-sm" onClick={onOpenReport} style={{ gap: '5px' }}>
-        <FileText size={13} /> Reports
-      </button>
       <button
         className="btn btn-sm btn-ghost"
         onClick={() => openModal('pig')}
@@ -193,6 +167,10 @@ export const TopBar: React.FC<TopBarProps> = ({
         title="Open PIG run comparison tool"
       >
         ◆ PIG Compare
+      </button>
+
+      <button className="btn btn-secondary btn-sm" onClick={onOpenReport} style={{ gap: '5px' }}>
+        <FileText size={13} /> Reports
       </button>
 
       <div style={{ width: '1px', height: '28px', background: 'var(--border)' }} />
@@ -220,6 +198,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div style={{
         display: 'flex', gap: '4px', padding: '0 8px',
         borderLeft: '1px solid var(--border)',
+        alignItems: 'center',
       }}>
         <button
           className={`btn btn-sm ${isOffline ? 'btn-destruct' : 'btn-ghost'}`}
@@ -230,6 +209,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           {isOffline ? <WifiOff size={12} /> : <WifiOff size={12} />}
           {isOffline ? 'Go Online' : 'Sim Offline'}
         </button>
+
         <button
           className="btn btn-sm btn-ghost"
           onClick={triggerLeakSimulation}
@@ -239,6 +219,53 @@ export const TopBar: React.FC<TopBarProps> = ({
           <AlertTriangle size={12} />
           Sim Leak
         </button>
+
+
+
+        {onSignOut && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button
+              onClick={onSignOut}
+              className="signout-full"
+              style={{
+                height: 24,
+                minWidth: 0,
+                padding: '0 8px',
+                borderRadius: 4,
+                border: '1px solid transparent',
+                background: 'transparent',
+                color: 'var(--text-muted)',
+                fontSize: 12,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+              title="Sign out"
+            >
+              Sign out
+            </button>
+
+            <button
+              onClick={onSignOut}
+              className="signout-icon"
+              style={{
+                display: 'none',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 24,
+                height: 24,
+                padding: 0,
+                borderRadius: 4,
+                border: '1px solid transparent',
+                background: 'transparent',
+                color: '#9BA3B2',
+                cursor: 'pointer',
+              }}
+              title="Sign out"
+            >
+              <LogOut size={16} color="#9BA3B2" />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
