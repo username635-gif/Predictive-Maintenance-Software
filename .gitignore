@@ -24,11 +24,10 @@ frontend/dist/
 frontend/.vite/
 
 # ─── Docker volumes / data ───────────────────────────────────────────────────
-data/
+/data/
 postgres-data/
 influxdb-data/
 mosquitto/data/
-mosquitto/log/
 
 # ─── OS ──────────────────────────────────────────────────────────────────────
 .DS_Store
