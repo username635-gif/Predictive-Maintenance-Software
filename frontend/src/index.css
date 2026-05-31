@@ -1,57 +1,70 @@
 /* ─── ReliabilityOS Design System · ISA-101 Dark Theme ────────────────────── */
 
 :root {
-  /* Palette – ISA-101 inspired */
-  --bg-main:        #1A1C1E;
-  --bg-panel:       #25282B;
-  --bg-panel-alt:   #2A2D30;
-  --bg-hover:       #2F3237;
-  --bg-active:      #35393F;
-  --border:         #3A3F44;
-  --border-light:   #454C52;
+  /* ReliabilityOS Color System (dark theme) */
+  --bg-main:        #0F1117; /* App canvas / outermost background */
+  --bg-panel:       #161B24; /* Panel and sidebar backgrounds */
+  --bg-panel-alt:   #1E2533; /* Card and row backgrounds */
+  --bg-hover:       #2A3245; /* Hover state backgrounds */
+  --bg-active:      #2A3245; /* active/toggled panels (no gradients) */
+  --border:         #3B4560; /* Borders, dividers, outlines */
+  --border-light:   #3B4560;
 
   /* Text */
-  --text-primary:   #E8ECEF;
-  --text-secondary: #858C94;
-  --text-muted:     #5A6069;
-  --text-inverse:   #1A1C1E;
+  --text-primary:   #C8D0DC; /* Primary */
+  --text-secondary: #9BA3B2; /* Secondary */
+  --text-muted:     #6B7280; /* Tertiary */
+  --text-inverse:   #0F1117;
 
-  /* Status colours – ISA-101: red=critical, orange=alert, yellow=warning, green=good (use sparingly) */
-  --color-critical: #E5484D;
-  --color-alert:    #F76808;
-  --color-warning:  #FFD00A;
-  --color-good:     #30A46C;
-  --color-info:     #0090FF;
-  --color-offline:  #5A5F66;
-  --color-purple:   #9B53D4;
+  /* Severity colors */
+  --color-critical: #F06A50;
+  --color-warning:  #D4A24B;
+  --color-good:     #5ABFA5;
 
-  /* Semantic dims */
-  --color-critical-dim: rgba(229,72,77,0.15);
-  --color-warning-dim:  rgba(255,208,10,0.15);
-  --color-good-dim:     rgba(48,164,108,0.15);
-  --color-info-dim:     rgba(0,144,255,0.15);
+  /* Active/selected highlight */
+  --color-info:     #378ADD;
 
-  /* Buttons – corporate blue as sole action colour */
-  --btn-primary:    #0090FF;
-  --btn-secondary:  #35393F;
-  --btn-destruct:   #E5484D;
+  /* Alert banner + modal (critical leak) */
+  --color-critical-dim: rgba(240, 106, 80, 0.12);
+  --color-warning-dim:  rgba(212, 162, 75, 0.12);
+  --color-good-dim:     rgba(90, 191, 165, 0.12);
+  --color-info-dim:     rgba(55, 138, 221, 0.12);
+
+  --color-critical-border: rgba(240, 106, 80, 0.30);
+  --color-warning-border:  rgba(212, 162, 75, 0.30);
+  --color-info-border:     rgba(55, 138, 221, 0.30);
+
+  /* Buttons */
+  --btn-primary:    #378ADD;
+  --btn-secondary:  #1E2533;
+  --btn-destruct:   #F06A50;
+
   --btn-height:     44px;
   --btn-radius:     4px;
+
+  /* AI violet family */
+  --color-purple:   #7F77DD;
+  --color-purple-dim: rgba(127, 119, 221, 0.12);
+  --color-purple-border: rgba(127, 119, 221, 0.30);
+
+  --color-offline:  #6B7280;
 
   /* Typography */
   --font-mono:      'SF Mono', 'Fira Code', 'Fira Mono', monospace;
 
-  /* Shadows */
+  /* Shadows (no drop-glow requirement; keep variables but do not introduce new ones) */
   --shadow-sm:  0 1px 4px rgba(0,0,0,0.5);
   --shadow-md:  0 4px 16px rgba(0,0,0,0.6);
   --shadow-lg:  0 8px 32px rgba(0,0,0,0.7);
-  --shadow-glow-red:    0 0 16px rgba(229,72,77,0.4);
-  --shadow-glow-yellow: 0 0 16px rgba(255,208,10,0.3);
+  --shadow-glow-red:    0 0 16px rgba(240,106,80,0.15);
+  --shadow-glow-yellow: 0 0 16px rgba(212,162,75,0.12);
+
 
   /* Layout */
   --topbar-height: 56px;
   --banner-height: 40px;
 }
+
 
 /* ─── Reset & Base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -111,10 +124,11 @@ h4 { font-size: 13px; font-weight: 600; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
 .btn-primary   { background: var(--btn-primary); color: #fff; }
-.btn-primary:hover:not(:disabled)   { background: #0079D8; }
+.btn-primary:hover:not(:disabled)   { background: #2F7ED0; }
 
 .btn-secondary { background: var(--btn-secondary); color: var(--text-primary); border: 1px solid var(--border-light); }
 .btn-secondary:hover:not(:disabled) { background: var(--bg-hover); }
+
 
 .btn-destruct  { background: var(--btn-destruct); color: #fff; }
 .btn-destruct:hover:not(:disabled)  { background: #CC3033; }
@@ -158,7 +172,8 @@ h4 { font-size: 13px; font-weight: 600; }
 }
 .health-dot.good     { background: var(--color-good); }
 .health-dot.warning  { background: var(--color-warning); }
-.health-dot.alert    { background: var(--color-alert); }
+.health-dot.alert    { background: var(--color-warning); }
+
 .health-dot.critical { background: var(--color-critical); box-shadow: var(--shadow-glow-red); }
 
 /* ─── Cards / Panels ───────────────────────────────────────────────────────── */

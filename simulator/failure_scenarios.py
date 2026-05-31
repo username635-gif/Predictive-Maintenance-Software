@@ -16,7 +16,10 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Callable, Optional
+
+# Type alias – must be defined before the dataclass that references it
+OverrideFn = Callable[[int], float]  # (relative_tick: int) -> float
 
 
 @dataclass
@@ -31,10 +34,6 @@ class FailureScenario:
             if tick_start <= tick <= tick_end:
                 return fn(tick - tick_start)
         return None
-
-
-# Type alias
-OverrideFn = callable  # (relative_tick: int) -> float
 
 
 def _ramp(start: float, end: float, ticks: int) -> OverrideFn:

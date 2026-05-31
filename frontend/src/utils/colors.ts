@@ -1,9 +1,10 @@
 import type { HealthStatus } from '../types';
 
 export const HEALTH_COLORS: Record<HealthStatus, string> = {
-  good:    '#30A46C',
-  warning: '#FFD00A',
-  critical:'#E5484D',
+  good:    '#5ABFA5',
+  warning: '#D4A24B',
+  critical:'#F06A50',
+
   unknown: '#5A5F66',
 };
 
@@ -22,32 +23,37 @@ export function healthStatusFromScore(score: number): HealthStatus {
 }
 
 export function severityColor(sev: string): string {
+  // Severity badge coloring (keeps Critical color constraints)
   switch (sev) {
-    case 'critical': return '#E5484D';
-    case 'high':     return '#F76808';
-    case 'medium':   return '#FFD00A';
-    case 'low':      return '#30A46C';
-    default:         return '#5A5F66';
+    case 'critical': return '#F06A50';
+    case 'high':     return '#F06A50';
+    case 'medium':   return '#D4A24B';
+    case 'low':      return '#5ABFA5';
+    default:         return '#6B7280';
   }
 }
+
 
 export function priorityColor(p: string): string {
   switch (p) {
-    case 'critical': return '#E5484D';
-    case 'high':     return '#F76808';
-    case 'medium':   return '#FFD00A';
-    case 'low':      return '#30A46C';
-    default:         return '#5A5F66';
+    case 'critical': return '#F06A50';
+    case 'high':     return '#F06A50';
+    case 'medium':   return '#D4A24B';
+    case 'low':      return '#5ABFA5';
+    default:         return '#6B7280';
   }
 }
 
+
 export function statusColor(s: string): string {
+  // UI workflow statuses (keep neutral/dim colors; avoid violating health severity rules)
   switch (s) {
-    case 'completed':  return '#30A46C';
-    case 'in_progress':return '#0090FF';
-    case 'pending':    return '#FFD00A';
-    case 'draft':      return '#858C94';
+    case 'completed':  return '#5ABFA5';
+    case 'in_progress':return '#378ADD';
+    case 'pending':    return '#D4A24B';
+    case 'draft':      return '#6B7280';
     case 'cancelled':  return '#5A5F66';
-    default:           return '#595959';
+    default:           return '#6B7280';
   }
 }
+

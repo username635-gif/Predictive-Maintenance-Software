@@ -11,10 +11,12 @@ import { Crosshair } from 'lucide-react';
 type Metric = 'wall_thickness' | 'pressure' | 'health_score' | 'corrosion_rate';
 
 const METRICS: { key: Metric; label: string; unit: string; color: string; yDomain: [number, number] }[] = [
-  { key: 'wall_thickness',  label: 'Wall Thickness', unit: 'mm',      color: '#0078D4', yDomain: [8, 14] },
-  { key: 'pressure',        label: 'Pressure',       unit: 'PSI',     color: '#9B53D4', yDomain: [650, 760] },
-  { key: 'health_score',    label: 'Health Score',   unit: '%',       color: '#2ECC40', yDomain: [0, 100] },
-  { key: 'corrosion_rate',  label: 'Corrosion Rate', unit: 'mm/yr',   color: '#FF851B', yDomain: [0, 1.2] },
+  { key: 'wall_thickness',  label: 'Wall Thickness', unit: 'mm',      color: '#5ABFA5', yDomain: [8, 14] },
+
+  { key: 'pressure',        label: 'Pressure',       unit: 'PSI',     color: '#8E87D6', yDomain: [650, 760] },
+  { key: 'health_score',    label: 'Health Score',   unit: '%',       color: '#378ADD', yDomain: [0, 100] },
+  { key: 'corrosion_rate',  label: 'Corrosion Rate', unit: 'mm/yr',   color: '#D4A24B', yDomain: [0, 1.2] },
+
 ];
 
 // Custom tooltip
@@ -28,13 +30,16 @@ const CustomTooltip: React.FC<{
       background: '#1E1E1E', border: '1px solid #3A3D48', borderRadius: '6px',
       padding: '10px 14px', fontSize: '12px',
     }}>
-      <div style={{ fontWeight: 600, marginBottom: '6px', color: '#E0E0E0' }}>
-        Mile {label}
+              <div style={{ fontWeight: 600, marginBottom: '6px', color: 'var(--text-primary)' }}>
+                Mile {label}
+
       </div>
       {payload.map(p => (
         <div key={p.dataKey} style={{ display: 'flex', gap: '8px', marginBottom: '3px' }}>
-          <span style={{ color: p.color ?? '#9E9E9E' }}>●</span>
-          <span style={{ color: '#9E9E9E' }}>{p.dataKey.replace(/_/g, ' ')}:</span>
+          <span style={{ color: p.color ?? 'var(--text-secondary)' }}>●</span>
+
+                <span style={{ color: 'var(--text-muted)' }}>{p.dataKey.replace(/_/g, ' ')}:</span>
+
           <span style={{ color: '#E0E0E0', fontFamily: 'monospace' }}>{typeof p.value === 'number' ? p.value.toFixed(2) : p.value}</span>
         </div>
       ))}
@@ -131,7 +136,8 @@ export const LongitudinalView: React.FC = () => {
               }
             }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#2A2D36" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#3B4560" vertical={false} />
+
 
             <XAxis
               dataKey="mile"
@@ -144,8 +150,10 @@ export const LongitudinalView: React.FC = () => {
             <YAxis
               yAxisId="thickness"
               domain={[8, 14]}
-              tick={{ fill: '#0078D4', fontSize: 10 }}
-              label={{ value: 'mm', angle: -90, position: 'insideLeft', fill: '#0078D4', fontSize: 11 }}
+              tick={{ fill: '#5ABFA5', fontSize: 10 }}
+
+              label={{ value: 'mm', angle: -90, position: 'insideLeft', fill: '#5ABFA5', fontSize: 11 }}
+
               hide={!activeMetrics.has('wall_thickness')}
             />
 
@@ -154,15 +162,18 @@ export const LongitudinalView: React.FC = () => {
               yAxisId="health"
               orientation="right"
               domain={[0, 100]}
-              tick={{ fill: '#2ECC40', fontSize: 10 }}
-              label={{ value: '%', angle: 90, position: 'insideRight', fill: '#2ECC40', fontSize: 11 }}
+              tick={{ fill: '#378ADD', fontSize: 10 }}
+
+              label={{ value: '%', angle: 90, position: 'insideRight', fill: '#378ADD', fontSize: 11 }}
+
               hide={!activeMetrics.has('health_score')}
             />
 
             <Tooltip content={<CustomTooltip />} />
             <Legend
-              wrapperStyle={{ bottom: '8px', fontSize: '11px', color: '#9E9E9E' }}
+              wrapperStyle={{ bottom: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}
             />
+
 
             {/* Segment health background colours (critical zones) */}
             {segments
@@ -181,8 +192,9 @@ export const LongitudinalView: React.FC = () => {
             {/* Selected segment highlight */}
             {selectedSeg && (
               <>
-                <ReferenceLine x={selectedSeg.mile_start} stroke="#0078D4" strokeWidth={2} yAxisId="health" />
-                <ReferenceLine x={selectedSeg.mile_end}   stroke="#0078D4" strokeWidth={2} yAxisId="health" />
+                <ReferenceLine x={selectedSeg.mile_start} stroke="#378ADD" strokeWidth={2} yAxisId="health" />
+                <ReferenceLine x={selectedSeg.mile_end}   stroke="#378ADD" strokeWidth={2} yAxisId="health" />
+
               </>
             )}
 
@@ -193,10 +205,12 @@ export const LongitudinalView: React.FC = () => {
                 type="monotone"
                 dataKey="wall_thickness"
                 name="Wall Thickness (mm)"
-                stroke="#0078D4"
+                stroke="#5ABFA5"
+
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 4, fill: '#0078D4' }}
+                activeDot={{ r: 4, fill: '#5ABFA5' }}
+
               />
             )}
 
@@ -207,8 +221,9 @@ export const LongitudinalView: React.FC = () => {
                 type="monotone"
                 dataKey="health_score"
                 name="Health Score (%)"
-                stroke="#2ECC40"
-                fill="rgba(46,204,64,0.08)"
+                stroke="#378ADD"
+                fill="rgba(55,138,221,0.08)"
+
                 strokeWidth={1.5}
                 dot={false}
               />
@@ -221,9 +236,10 @@ export const LongitudinalView: React.FC = () => {
                 type="monotone"
                 dataKey="pressure"
                 name="Pressure (PSI × 0.1)"
-                stroke="#9B53D4"
+                stroke="#8E87D6"
                 strokeWidth={1.5}
                 dot={false}
+
                 // scale pressure to 0-100 in health axis for overlay
               />
             )}
@@ -235,8 +251,9 @@ export const LongitudinalView: React.FC = () => {
                 type="monotone"
                 dataKey="corrosion_rate"
                 name="Corrosion Rate (mm/yr)"
-                stroke="#FF851B"
+                stroke="#D4A24B"
                 strokeWidth={1.5}
+
                 dot={false}
                 strokeDasharray="4 2"
               />
@@ -248,8 +265,9 @@ export const LongitudinalView: React.FC = () => {
                 yAxisId="health"
                 dataKey="pig_2022"
                 name="PIG 2022 – % metal loss"
-                fill="#FF851B"
+                fill="#F06A50"
                 shape="diamond"
+
               />
             )}
 
@@ -259,8 +277,9 @@ export const LongitudinalView: React.FC = () => {
                 yAxisId="health"
                 dataKey="pig_2024"
                 name="PIG 2024 – % metal loss"
-                fill="#FF4136"
+                fill="#F06A50"
                 shape="star"
+
               />
             )}
 
@@ -271,8 +290,9 @@ export const LongitudinalView: React.FC = () => {
                 type="monotone"
                 dataKey="forecast"
                 name="2027 Forecast (% loss)"
-                stroke="#9B53D4"
+                stroke="#6B7280"
                 strokeDasharray="6 3"
+
                 strokeWidth={1.5}
                 dot={false}
               />
@@ -281,6 +301,7 @@ export const LongitudinalView: React.FC = () => {
             <Brush
               dataKey="mile"
               height={20}
+
               stroke="#2D2D2D"
               fill="#1A1C23"
               travellerWidth={6}
@@ -292,6 +313,7 @@ export const LongitudinalView: React.FC = () => {
 
       {/* Segment colour band (x-axis strip) */}
       <div style={{ display: 'flex', height: '8px', borderRadius: '4px', overflow: 'hidden', flexShrink: 0 }}>
+
         {segments.map(seg => (
           <div
             key={seg.id}

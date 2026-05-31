@@ -31,11 +31,12 @@ function SensorDots({ segmentId }: { segmentId: string }) {
           center={[sensor.lat, sensor.lng]}
           radius={sensor.status === 'offline' ? 4 : 3}
           pathOptions={{
-            fillColor: sensor.status === 'offline' ? '#5A5F66' : sensor.status === 'degraded' ? '#F76808' : '#0090FF',
+            fillColor: sensor.status === 'offline' ? '#6B7280' : sensor.status === 'degraded' ? '#F06A50' : '#378ADD',
             fillOpacity: 0.9,
             weight: 0,
             color: 'transparent',
           }}
+
         >
           <Popup>
             <div style={{ minWidth: '180px', fontSize: '12px' }}>
@@ -52,8 +53,9 @@ function SensorDots({ segmentId }: { segmentId: string }) {
               <div>
                 <span style={{ color: '#858C94' }}>Status: </span>
                 <span style={{
-                  color: sensor.status === 'online' ? '#30A46C' : sensor.status === 'degraded' ? '#F76808' : '#5A5F66'
+                  color: sensor.status === 'online' ? '#5ABFA5' : sensor.status === 'degraded' ? '#F06A50' : '#6B7280'
                 }}>
+
                   {sensor.status}
                 </span>
               </div>
@@ -114,6 +116,7 @@ export const PipelineMap: React.FC = () => {
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
       <MapContainer
         center={[32.05, -101.8]}
+
         zoom={7}
         minZoom={5}
         maxBounds={[[20, -115], [45, -88]]}
@@ -181,11 +184,12 @@ export const PipelineMap: React.FC = () => {
                       {prediction && (
                         <>
                           <span style={{ color: '#9E9E9E' }}>RUL</span>
-                          <span style={{ color: prediction.rul_days < 30 ? '#E5484D' : '#FFD00A', fontWeight: 600 }}>
+                          <span style={{ color: prediction.rul_days <= 39 ? '#F06A50' : prediction.rul_days <= 69 ? '#D4A24B' : '#5ABFA5', fontWeight: 600 }}>
+
                             {prediction.rul_days === 0 ? 'NOW' : `${prediction.rul_days}d`}
                           </span>
                           <span style={{ color: '#9E9E9E' }}>Risk</span>
-                          <span style={{ color: '#F76808' }}>{Math.round(prediction.anomaly_score * 100)}%</span>
+                          <span style={{ color: '#F06A50' }}>{Math.round(prediction.anomaly_score * 100)}%</span>
                         </>
                       )}
                       {seg.last_pig_run && (
@@ -222,13 +226,13 @@ export const PipelineMap: React.FC = () => {
       {/* Map legend */}
       <div style={{
         position: 'absolute', bottom: '24px', left: '12px', zIndex: 1000,
-        background: 'rgba(19,22,31,0.92)', border: '1px solid var(--border)',
+          background: 'rgba(22,27,36,0.92)', border: '1px solid var(--border)',
         borderRadius: '6px', padding: '10px 14px', backdropFilter: 'blur(4px)',
       }}>
         <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', letterSpacing: '0.5px' }}>
           SEGMENT HEALTH
         </div>
-        {[['#2ECC40', 'Good (70–100%)'], ['#FFDC00', 'Warning (40–69%)'], ['#FF4136', 'Critical (0–39%)']].map(([c, l]) => (
+        {[['#5ABFA5', 'Good (70–100%)'], ['#D4A24B', 'Warning (40–69%)'], ['#F06A50', 'Critical (0–39%)']].map(([c, l]) => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <div style={{ width: '24px', height: '4px', background: c, borderRadius: '2px' }} />
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{l}</span>
@@ -236,11 +240,11 @@ export const PipelineMap: React.FC = () => {
         ))}
         <div style={{ borderTop: '1px solid var(--border)', marginTop: '6px', paddingTop: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0078D4', flexShrink: 0 }} />
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#378ADD', flexShrink: 0 }} />
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Sensor online</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FF4136', flexShrink: 0, boxShadow: '0 0 6px rgba(255,65,54,0.6)' }} />
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F06A50', flexShrink: 0 }} />
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Active alert</span>
           </div>
         </div>
