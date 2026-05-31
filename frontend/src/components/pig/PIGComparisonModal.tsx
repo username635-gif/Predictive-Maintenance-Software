@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { X, GitCompare } from 'lucide-react';
 import { PIGRun, PIGFinding } from '../../types';
+import { default as SensorConnectionsCard } from '../sensors/SensorConnectionsCard';
 
 export const PIGComparisonModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [runAId, setRunAId] = useState(PIG_RUNS[1]?.id ?? '');
@@ -72,6 +73,12 @@ export const PIGComparisonModal: React.FC<{ onClose: () => void }> = ({ onClose 
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 18px' }}>
+          {/* Sensor Connections (placed above existing PIG UI) */}
+          <div style={{ marginBottom: '24px' }}>
+            {/* eslint-disable-next-line @typescript-eslint/no-var-requires */}
+            <SensorConnectionsCard />
+          </div>
+
           {/* Run selector */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
             {([
