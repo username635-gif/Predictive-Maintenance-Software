@@ -1,9 +1,11 @@
-- [ ] Scan existing frontend routing / entrypoints
-- [ ] Implement auth session utility (localStorage ros_session)
-- [ ] Add /login route and SignIn page component
-- [ ] Add auth guard wrapper and route redirection logic
-- [ ] Add navigation sign-out button (top right) visible after login
-- [ ] Add ?reason=timeout amber info banner on login
-- [ ] Update App/main to use react-router-dom
-- [ ] Build/test frontend
+# TODO - Predictive Maintenance
+
+- [x] Implement required LoginPage UI (divider, inputs, password toggle, sign-in button, forgot password link, error state, footer outside card) in `frontend/src/screens/SignInPage/SignInPage.tsx`
+
+- [x] Implement DEMO AUTH logic in `SignInPage.tsx` (SSO + email/password validation + error handling/password clearing)
+
+- [x] Fix `AuthGuard` so `/login` stays accessible when logged out in `frontend/src/routes/AuthGuard.tsx`
+
+- [ ] Run `tsc --noEmit` in `frontend/` and fix any TypeScript strict errors
+
 
