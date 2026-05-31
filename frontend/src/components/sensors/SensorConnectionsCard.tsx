@@ -128,7 +128,8 @@ const SensorConnectionsCard: React.FC = () => {
         type="button"
         style={{
           marginTop: '16px',
-          width: '100%',
+          width: 'auto',
+          alignSelf: 'flex-start',
           background: '#1E2533',
           border: '0.5px solid #3B4560',
           color: '#C8D0DC',
@@ -138,6 +139,7 @@ const SensorConnectionsCard: React.FC = () => {
           cursor: 'pointer',
           transition: 'background 0.15s',
         }}
+
         onMouseEnter={(e) => {
           const target: HTMLButtonElement = e.currentTarget;
           target.style.background = '#2A3245';
