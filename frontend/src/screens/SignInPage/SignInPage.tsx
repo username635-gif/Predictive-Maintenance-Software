@@ -176,6 +176,55 @@ export const SignInPage: React.FC = () => {
           </button>
         </div>
 
+        <button
+          type="button"
+          style={{
+            marginTop: 24,
+            width: '100%',
+            height: 42,
+            background: '#378ADD',
+            color: '#FFFFFF',
+            fontSize: 14,
+            fontWeight: 500,
+            border: 'none',
+            borderRadius: 4,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            padding: '0 14px',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = '#2E74BB';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = '#378ADD';
+          }}
+          aria-label="Sign in with Company SSO"
+          // SSO is not wired in yet; preserve UI contract (dominant action) for now.
+          onClick={() => {
+            // Intentionally no-op.
+          }}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <rect x="0" y="0" width="4" height="4" rx="0.5" fill="#FFFFFF" />
+            <rect x="10" y="0" width="4" height="4" rx="0.5" fill="#FFFFFF" />
+            <rect x="0" y="10" width="4" height="4" rx="0.5" fill="#FFFFFF" />
+            <rect x="10" y="10" width="4" height="4" rx="0.5" fill="#FFFFFF" />
+          </svg>
+          <span style={{ display: 'inline-block', lineHeight: 1 }}>Sign in with Company SSO</span>
+        </button>
+
         <div style={styles.hint}>
           Credentials are validated internally. This page is restricted to engineering and operations staff.
         </div>
