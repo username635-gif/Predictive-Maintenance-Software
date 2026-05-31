@@ -5,25 +5,26 @@ import {
   ResponsiveContainer, ReferenceLine, Legend
 } from 'recharts';
 import { X, GitCompare } from 'lucide-react';
+import { PIGRun, PIGFinding } from '../../types';
 
 export const PIGComparisonModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [runAId, setRunAId] = useState(PIG_RUNS[1]?.id ?? '');
   const [runBId, setRunBId] = useState(PIG_RUNS[0]?.id ?? '');
 
-  const runA = PIG_RUNS.find(r => r.id === runAId);
-  const runB = PIG_RUNS.find(r => r.id === runBId);
+  const runA = PIG_RUNS.find((r: PIGRun) => r.id === runAId);
+  const runB = PIG_RUNS.find((r: PIGRun) => r.id === runBId);
 
   // Build comparison table: merge findings by approximate mile marker
   const comparisonData = React.useMemo(() => {
     if (!runA || !runB) return [];
     const allMiles = [...new Set([
-      ...runA.findings.map(f => Math.round(f.mile_marker * 10) / 10),
-      ...runB.findings.map(f => Math.round(f.mile_marker * 10) / 10),
+      ...runA.findings.map((f: PIGFinding) => Math.round(f.mile_marker * 10) / 10),
+      ...runB.findings.map((f: PIGFinding) => Math.round(f.mile_marker * 10) / 10),
     ])].sort((a, b) => a - b);
 
     return allMiles.map(mile => {
-      const fA = runA.findings.find(f => Math.abs(f.mile_marker - mile) < 0.5);
-      const fB = runB.findings.find(f => Math.abs(f.mile_marker - mile) < 0.5);
+     const fA = runA.findings.find((f: PIGFinding) => Math.abs(f.mile_marker - mile) < 0.5);
+    const fB = runB.findings.find((f: PIGFinding) => Math.abs(f.mile_marker - mile) < 0.5);
       const growthRate = fA && fB
         ? +((fB.metal_loss_percent - fA.metal_loss_percent) /
            ((new Date(runB.date).getTime() - new Date(runA.date).getTime()) / (1000 * 3600 * 24 * 365))).toFixed(2)
@@ -84,7 +85,7 @@ export const PIGComparisonModal: React.FC<{ onClose: () => void }> = ({ onClose 
                   onChange={e => setter(e.target.value)}
                   style={{ width: '100%', padding: '8px 10px', background: '#252830', border: `1px solid ${color}50`, borderRadius: '4px', color: 'var(--text-primary)', fontSize: '13px', colorScheme: 'dark' }}
                 >
-                  {PIG_RUNS.map(r => (
+                  {PIG_RUNS.map((r: PIGRun) => (
                     <option key={r.id} value={r.id}>{r.date} – {r.type} ({r.vendor})</option>
                   ))}
                 </select>
@@ -111,7 +112,7 @@ export const PIGComparisonModal: React.FC<{ onClose: () => void }> = ({ onClose 
                       <div>Vendor: <span style={{ color: 'var(--text-secondary)' }}>{run.vendor}</span></div>
                       <div>Findings: <span style={{ color: run.findings.length > 5 ? '#FF851B' : '#2ECC40', fontWeight: 600 }}>{run.findings.length}</span></div>
                       <div>Max loss: <span style={{ color: '#E0E0E0', fontFamily: 'var(--font-mono)' }}>
-                        {Math.max(...run.findings.map(f => f.metal_loss_percent))}%
+                        {Math.max(...run.findings.map((f: PIGFinding) => f.metal_loss_percent))}%
                       </span></div>
                     </div>
                     <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: 1.5 }}>{run.summary}</p>
