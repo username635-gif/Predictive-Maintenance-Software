@@ -12,11 +12,19 @@ interface TopBarProps {
   onOpenSensors: () => void;
   onOpenWorkOrders: () => void;
   onOpenReport: () => void;
+  onSignOut?: () => void;
 }
 
+
 export const TopBar: React.FC<TopBarProps> = ({
-  onOpenROI, onOpenSensors, onOpenWorkOrders, onOpenReport
+  onOpenROI,
+  onOpenSensors,
+  onOpenWorkOrders,
+  onOpenReport,
+  onSignOut,
 }) => {
+
+
   const {
     isOffline, connectivity, getActiveAlerts, getTotalROI,
     viewMode, setViewMode, toggleSimulateOffline, pendingSyncCount,
@@ -151,6 +159,30 @@ export const TopBar: React.FC<TopBarProps> = ({
       <button className="btn btn-secondary btn-sm" onClick={onOpenWorkOrders} style={{ gap: '5px' }}>
         <Wrench size={13} /> Work Orders
       </button>
+
+      {onSignOut && (
+        <button
+          onClick={onSignOut}
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 16,
+            height: 24,
+            minWidth: 0,
+            padding: '0 8px',
+            borderRadius: 4,
+            border: '1px solid transparent',
+            background: 'transparent',
+            color: 'var(--text-muted)',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+          title="Sign out"
+        >
+          Sign out
+        </button>
+      )}
+
       <button className="btn btn-secondary btn-sm" onClick={onOpenReport} style={{ gap: '5px' }}>
         <FileText size={13} /> Reports
       </button>
