@@ -235,7 +235,10 @@ h4 { font-size: 13px; font-weight: 600; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+@keyframes login-card-fade { from { opacity: 0; } to { opacity: 1; } }
+
 /* ─── Responsive three-panel layout ───────────────────────────────────────── */
+
 /* CSS Grid – no overflow, no cut-off on right side */
 .app-panels {
   display: grid;
@@ -295,7 +298,12 @@ h4 { font-size: 13px; font-weight: 600; }
 .animate-pulse-red    { animation: pulse-red    2s ease-in-out infinite; }
 .animate-pulse-yellow { animation: pulse-yellow 2s ease-in-out infinite; }
 .animate-spin         { animation: spin         1s linear infinite; }
+
 .animate-fade-in      { animation: fade-in      0.3s ease-out; }
+
+/* Login page: single 200ms opacity fade */
+.animate-login-card-fade { animation: login-card-fade 200ms ease-out; }
+
 
 /* ─── Recharts overrides ───────────────────────────────────────────────────── */
 .recharts-default-tooltip {
