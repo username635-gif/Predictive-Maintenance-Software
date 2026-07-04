@@ -59,7 +59,9 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({ prediction, onCr
               lower={prediction.rul_lower}
               upper={prediction.rul_upper}
               size={80}
+              model_metadata={prediction.model_metadata}
             />
+
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>PRIMARY FAILURE MODE</div>
@@ -110,8 +112,35 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({ prediction, onCr
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 700, color: '#30A46C' }}>
               {Math.round(prediction.confidence * 100)}%
             </div>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Model Confidence</div>
+            {prediction.model_metadata?.validated === false && (
+              <div style={{
+                marginTop: 4,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <span
+                  style={{
+                    background: '#FFB02018',
+                    border: '1px solid #FFB020',
+                    color: '#FFB020',
+                    borderRadius: 999,
+                    padding: '2px 8px',
+                    fontSize: 9,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  Unvalidated model — synthetic training data
+                </span>
+              </div>
+            )}
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: prediction.model_metadata?.validated === false ? 6 : 0 }}>
+              Model Confidence
+            </div>
           </div>
+
         </div>
 
         {/* EXPLAIN button */}

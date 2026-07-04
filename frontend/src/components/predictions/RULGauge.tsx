@@ -1,17 +1,22 @@
 import React from 'react';
 
+import type { ModelMetadata } from '../../types';
+
 interface RULGaugeProps {
   days: number;
   lower: number;
   upper: number;
   size?: number;
+  model_metadata?: ModelMetadata;
 }
+
 
 /**
  * SVG arc gauge – shows remaining useful life in days.
  * Green > 60d, Yellow 30–60, Orange 14–30, Red < 14.
  */
-export const RULGauge: React.FC<RULGaugeProps> = ({ days, lower, upper, size = 100 }) => {
+export const RULGauge: React.FC<RULGaugeProps> = ({ days, lower, upper, size = 100, model_metadata }) => {
+
   const MAX_DAYS = 120;
   const pct = Math.min(days / MAX_DAYS, 1);
 
@@ -75,6 +80,16 @@ export const RULGauge: React.FC<RULGaugeProps> = ({ days, lower, upper, size = 1
       <text x={cx} y={cy + 26} textAnchor="middle" fontSize={8} fill="#4A4D56">
         {lower}–{upper}d (90% CI)
       </text>
+
+      {/* Provenance label (if provided) */}
+      {model_metadata?.validated === false && (
+        <g>
+          <text x={cx} y={cy + 36} textAnchor="middle" fontSize={7} fill="#FFB020">
+            Unvalidated model — synthetic training data
+          </text>
+        </g>
+      )}
+
 
       {/* Min/Max ticks */}
       <text x={trackStart.x - 4} y={trackStart.y + 2} fontSize={8} fill="#3A3D48" textAnchor="end">0</text>

@@ -196,7 +196,9 @@ def main() -> None:
         port=MQTT_PORT,
         gateway_id=GATEWAY_ID,
         on_reading=lambda r: on_sensor_reading(r, conn, rules),
+        config_path=str(Path(__file__).resolve().parent / "config.yaml"),
     )
+
 
     # Periodic cloud sync
     schedule.every(CLOUD_SYNC_INTERVAL_S).seconds.do(lambda: sync_task(conn))

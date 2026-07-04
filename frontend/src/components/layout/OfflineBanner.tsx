@@ -39,8 +39,9 @@ export const OfflineBanner: React.FC = () => {
       <div style={{ height: '14px', width: '1px', background: '#444' }} />
 
       <span style={{ fontSize: '12px', color: '#A0A0A0' }}>
-        Map, sensors and work orders available. Real-time AI analysis paused.
+        Edge monitoring is still active — critical alarms will trigger locally
       </span>
+
 
       <div style={{ flex: 1 }} />
 

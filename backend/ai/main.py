@@ -47,6 +47,29 @@ log = structlog.get_logger()
 # ─────────────────────────────── Model Registry ───────────────────────────────
 models: dict = {}
 
+# ─────────────────────────────── Provenance Registry ─────────────────────────
+from ai_service.model_registry import get_model_metadata
+
+
+def _provenance_response(model_key: str, validation_note: str) -> dict:
+    meta = get_model_metadata(model_key)
+    return {
+        "version": meta.model_version,
+        "validated": False,
+        "validation_note": validation_note,
+        "training_data_description": meta.training_data_description,
+        "validation_method": meta.validation_method,
+        "last_validated_date": meta.last_validated_date,
+        "precision": meta.precision,
+        "recall": meta.recall,
+        "false_positive_rate": meta.false_positive_rate,
+    }
+
+
+
+
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -91,32 +114,50 @@ def health():
 
 
 # ─────────────────────────────── Anomaly Detection ───────────────────────────
-@app.post("/predict/anomaly", response_model=AnomalyResponse)
+@app.post("/predict/anomaly")
 def predict_anomaly(payload: SensorWindow):
+
     """
     Input: sliding window of multi-variate sensor readings (last N timesteps).
     Output: anomaly score 0–1 and binary flag.
     """
     try:
-        result = models["anomaly"].predict(payload)
-        log.info("anomaly_prediction", segment=payload.segment_id, score=result.anomaly_score)
-        return result
+        prediction = models["anomaly"].predict(payload)
+        log.info("anomaly_prediction", segment=payload.segment_id, score=prediction.anomaly_score)
+        return {
+            "prediction": prediction,
+            "model_metadata": _provenance_response(
+                model_key="anomaly",
+                validated=False,
+                validation_note="Trained on synthetic/demo scenarios only; pending real failure-history validation.",
+            ),
+        }
     except Exception as exc:
         log.error("anomaly_error", error=str(exc))
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+
 # ─────────────────────────────── RUL Prediction ──────────────────────────────
-@app.post("/predict/rul", response_model=RULResponse)
+@app.post("/predict/rul")
 def predict_rul(payload: SensorWindow):
+
     """
     Input: engineered features from sensor window.
     Output: predicted RUL in days with 90% confidence interval.
     """
     try:
-        result = models["rul"].predict(payload)
-        log.info("rul_prediction", segment=payload.segment_id, rul_days=result.rul_days)
-        return result
+        prediction = models["rul"].predict(payload)
+        log.info("rul_prediction", segment=payload.segment_id, rul_days=prediction.rul_days)
+        return {
+            "prediction": prediction,
+            "model_metadata": _provenance_response(
+                model_key="rul",
+                validated=False,
+                validation_note="Trained on synthetic scenarios only; pending real failure-history validation.",
+            ),
+        }
+
     except Exception as exc:
         log.error("rul_error", error=str(exc))
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -129,9 +170,21 @@ def predict_root_cause(payload: SensorWindow):
     Multi-label classification of failure root causes with SHAP explanations.
     """
     try:
-        result = models["root_cause"].predict(payload)
-        log.info("root_cause_prediction", segment=payload.segment_id, top=result.root_causes[0].cause)
-        return result
+        prediction = models["root_cause"].predict(payload)
+        log.info(
+            "root_cause_prediction",
+            segment=payload.segment_id,
+            top=prediction.root_causes[0].cause,
+        )
+        return {
+            "prediction": prediction,
+            "model_metadata": _provenance_response(
+                model_key="root_cause",
+                validated=False,
+                validation_note="Trained on synthetic failure modes mapped to simulated sensor patterns; pending real failure-history validation.",
+            ),
+        }
+
     except Exception as exc:
         log.error("root_cause_error", error=str(exc))
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -144,13 +197,21 @@ def predict_leak(payload: SensorWindow):
     Probabilistic sensor fusion for leak detection from DAS + flow balance + pressure.
     """
     try:
-        result = models["leak"].predict(payload)
-        if result.is_leak:
-            log.warning("LEAK_DETECTED", segment=payload.segment_id, confidence=result.confidence)
-        return result
+        prediction = models["leak"].predict(payload)
+        if prediction.is_leak:
+            log.warning("LEAK_DETECTED", segment=payload.segment_id, confidence=prediction.confidence)
+        return {
+            "prediction": prediction,
+            "model_metadata": _provenance_response(
+                model_key="leak",
+                validated=False,
+                validation_note="Calibrated on synthetic leak/no-leak simulations and Bayesian priors; pending real leak-history validation.",
+            ),
+        }
     except Exception as exc:
         log.error("leak_error", error=str(exc))
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
 
 
 # ─────────────────────────────── Feedback Loop ───────────────────────────────

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import Joi from 'joi';
 import { mockDatabase } from '../data/mockDatabase';
+import { auditLog } from '../middleware/auditLog';
 
 const router = Router();
 
@@ -47,29 +48,58 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 // POST /api/v1/workorders — create
-router.post('/', (req: Request, res: Response) => {
-  const { error, value } = createWOSchema.validate(req.body);
-  if (error) {
-    res.status(400).json({ error: 'Validation failed', details: error.details });
-    return;
+router.post(
+  '/',
+  auditLog({
+    actionType: 'workorder_create',
+    entityType: 'workorder',
+    entityId: (req) => {
+      // We only have the request at this point; the audit middleware writes before response returns.
+      // Since audit_log.entity_id is NOT NULL, provide something deterministic from input.
+      return `req-${req.body?.segment_id ?? 'SEG-unknown'}`;
+    },
+    previousState: () => null,
+    newState: (_req, result) => result,
+  }),
+  (req: Request, res: Response) => {
+    const { error, value } = createWOSchema.validate(req.body);
+    if (error) {
+      res.status(400).json({ error: 'Validation failed', details: error.details });
+      return;
+    }
+    const wo = mockDatabase.createWorkOrder(value);
+    res.status(201).json({ work_order: wo });
   }
-  const wo = mockDatabase.createWorkOrder(value);
-  res.status(201).json({ work_order: wo });
-});
+);
 
 // PATCH /api/v1/workorders/:id — update
-router.patch('/:id', (req: Request, res: Response) => {
-  const allowed = ['status', 'priority', 'assigned_to', 'technician_notes', 'actual_root_cause'];
-  const updates: Record<string, unknown> = {};
-  allowed.forEach((k) => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
+router.patch(
+  '/:id',
+  auditLog({
+    actionType: 'workorder_update',
+    entityType: 'workorder',
+    entityId: (req) => req.params.id,
+    previousState: (req) => {
+      const wo = mockDatabase.getWorkOrders().find((w) => w.id === req.params.id);
+      return wo ? { ...wo } : null;
+    },
+    newState: (_req, result) => result,
+  }),
+  (req: Request, res: Response) => {
+    const allowed = ['status', 'priority', 'assigned_to', 'technician_notes', 'actual_root_cause'];
+    const updates: Record<string, unknown> = {};
+    allowed.forEach((k) => {
+      if (req.body[k] !== undefined) updates[k] = req.body[k];
+    });
 
-  const wo = mockDatabase.updateWorkOrder(req.params.id, updates);
-  if (!wo) {
-    res.status(404).json({ error: 'Work order not found' });
-    return;
+    const wo = mockDatabase.updateWorkOrder(req.params.id, updates);
+    if (!wo) {
+      res.status(404).json({ error: 'Work order not found' });
+      return;
+    }
+    res.json({ work_order: wo });
   }
-  res.json({ work_order: wo });
-});
+);
 
 // POST /api/v1/workorders/sync — bulk offline sync
 router.post('/sync', (req: Request, res: Response) => {
@@ -86,3 +116,4 @@ router.post('/sync', (req: Request, res: Response) => {
 });
 
 export default router;
+

@@ -45,5 +45,10 @@ export default defineConfig({
       }
     })
   ],
-  server: { port: 3000 }
+  server: { port: 3000 },
+  define: {
+    // Intentionally do not set VITE_DEMO_MODE by default.
+    // Enable demo controls/badges only via explicit env configuration.
+  },
 });
+

@@ -27,12 +27,18 @@ database:
 
 sensors:
   poll_interval_seconds: 5
-  types:
-    - ultrasonic_thickness
-    - pressure_transmitter
-    - acoustic_emission
-    - cathodic_protection
-    - flow_meter
+  groups:
+    - id: seg036_wall_thickness
+      adapter: opcua
+      endpoint: "opc.tcp://10.0.4.12:4840"
+      node_id: "ns=2;s=WallThickness"
+      sensor_type: ultrasonic_thickness
+      unit: "mm"
+
+    - id: sim_group_1
+      adapter: simulator
+      # simulator-specific parameters live in sensor_simulator.py
+
 
 alarms:
   local_panel_modbus: false

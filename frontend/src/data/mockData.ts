@@ -240,7 +240,13 @@ export const PREDICTIONS: PredictionResult[] = [
     ],
     model_version: '2.4.1',
     confidence: 0.91,
+    model_metadata: {
+      version: '2.4.1',
+      validated: false,
+      validation_note: 'Trained on synthetic scenarios only pending real failure-history validation',
+    },
   },
+
   {
     id: 'PRED-002',
     segment_id: 'SEG-022', // Mile 210–220

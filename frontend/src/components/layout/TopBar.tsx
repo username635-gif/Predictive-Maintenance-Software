@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { fmtROI } from '../../utils/formatting';
 import { timeAgo } from '../../utils/formatting';
@@ -6,6 +6,96 @@ import {
   Activity, AlertTriangle, Bell, ChevronDown, Cpu, Wifi, WifiOff,
   BarChart2, FileText, Wrench, Map, Layers, LogOut
 } from 'lucide-react';
+
+type DemoControlsProps = {
+
+  isOffline: boolean;
+  onToggleOffline: () => void;
+  onTriggerLeak: () => void;
+};
+
+const DemoControls: React.FC<DemoControlsProps> = ({
+  isOffline,
+  onToggleOffline,
+  onTriggerLeak,
+}) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      style={{
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: '6px',
+        padding: '4px 0',
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        title="Demo Controls (non-production)"
+        style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          background: 'transparent',
+          border: `1px solid rgba(212, 162, 75, 0.55)`,
+          color: '#FFD00A',
+          borderRadius: '4px',
+          padding: '0 10px',
+          height: '28px',
+          cursor: 'pointer',
+          fontSize: '11px',
+          whiteSpace: 'nowrap',
+          boxShadow: 'var(--shadow-sm)',
+          outline: 'none',
+        }}
+      >
+        <AlertTriangle size={12} /> Demo Controls {open ? '—' : ''}
+      </button>
+
+      {open && (
+        <div
+          style={{
+            background: '#151A26',
+            border: '1px solid rgba(212, 162, 75, 0.55)',
+            borderRadius: '6px',
+            padding: '8px 10px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            minWidth: 170,
+          }}
+        >
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+            Warning: Demo actions only (synthetic data)
+          </div>
+
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={onToggleOffline}
+            title="Toggle offline simulation"
+            style={{ justifyContent: 'space-between', borderColor: 'rgba(255,208,10,0.30)', color: '#FFD00A' }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {isOffline ? <WifiOff size={12} /> : <Wifi size={12} color="#FFD00A" />}
+              {isOffline ? 'Go Online' : 'Sim Offline'}
+            </span>
+          </button>
+
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={onTriggerLeak}
+            title="Trigger simulated leak alert"
+            style={{ justifyContent: 'space-between', borderColor: 'rgba(229,72,77,0.35)', color: '#E5484D' }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AlertTriangle size={12} /> Sim Leak
+            </span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface TopBarProps {
   onOpenROI: () => void;
@@ -194,79 +284,116 @@ export const TopBar: React.FC<TopBarProps> = ({
         )}
       </div>
 
-      {/* Dev Controls – Simulate buttons */}
-      <div style={{
-        display: 'flex', gap: '4px', padding: '0 8px',
-        borderLeft: '1px solid var(--border)',
-        alignItems: 'center',
-      }}>
-        <button
-          className={`btn btn-sm ${isOffline ? 'btn-destruct' : 'btn-ghost'}`}
-          onClick={toggleSimulateOffline}
-          title="Toggle offline simulation"
-          style={{ fontSize: '11px', gap: '4px' }}
-        >
-          {isOffline ? <WifiOff size={12} /> : <WifiOff size={12} />}
-          {isOffline ? 'Go Online' : 'Sim Offline'}
-        </button>
+      {/* Dev Controls – gated Demo Controls */}
+      {String((import.meta as any).env?.VITE_DEMO_MODE) === 'true' ? (
 
-        <button
-          className="btn btn-sm btn-ghost"
-          onClick={triggerLeakSimulation}
-          title="Trigger simulated leak alert"
-          style={{ fontSize: '11px', color: '#E5484D', gap: '4px' }}
-        >
-          <AlertTriangle size={12} />
-          Sim Leak
-        </button>
+        <div style={{
+          display: 'flex', gap: '10px', padding: '0 8px',
+          borderLeft: '1px solid rgba(212,162,75,0.25)',
+          alignItems: 'center',
+        }}>
+          <DemoControls
+            isOffline={isOffline}
+            onToggleOffline={toggleSimulateOffline}
+            onTriggerLeak={triggerLeakSimulation}
+          />
 
+          {onSignOut && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <button
+                onClick={onSignOut}
+                className="signout-full"
+                style={{
+                  height: 24,
+                  minWidth: 0,
+                  padding: '0 8px',
+                  borderRadius: 4,
+                  border: '1px solid transparent',
+                  background: 'transparent',
+                  color: 'var(--text-muted)',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+                title="Sign out"
+              >
+                Sign out
+              </button>
 
+              <button
+                onClick={onSignOut}
+                className="signout-icon"
+                style={{
+                  display: 'none',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 24,
+                  height: 24,
+                  padding: 0,
+                  borderRadius: 4,
+                  border: '1px solid transparent',
+                  background: 'transparent',
+                  color: '#9BA3B2',
+                  cursor: 'pointer',
+                }}
+                title="Sign out"
+              >
+                <LogOut size={16} color="#9BA3B2" />
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{
+          display: 'flex', gap: '16px', alignItems: 'center', padding: '0 8px',
+          borderLeft: '1px solid var(--border)',
+        }}>
+          {onSignOut && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <button
+                onClick={onSignOut}
+                className="signout-full"
+                style={{
+                  height: 24,
+                  minWidth: 0,
+                  padding: '0 8px',
+                  borderRadius: 4,
+                  border: '1px solid transparent',
+                  background: 'transparent',
+                  color: 'var(--text-muted)',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+                title="Sign out"
+              >
+                Sign out
+              </button>
 
-        {onSignOut && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button
-              onClick={onSignOut}
-              className="signout-full"
-              style={{
-                height: 24,
-                minWidth: 0,
-                padding: '0 8px',
-                borderRadius: 4,
-                border: '1px solid transparent',
-                background: 'transparent',
-                color: 'var(--text-muted)',
-                fontSize: 12,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-              title="Sign out"
-            >
-              Sign out
-            </button>
-
-            <button
-              onClick={onSignOut}
-              className="signout-icon"
-              style={{
-                display: 'none',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 24,
-                height: 24,
-                padding: 0,
-                borderRadius: 4,
-                border: '1px solid transparent',
-                background: 'transparent',
-                color: '#9BA3B2',
-                cursor: 'pointer',
-              }}
-              title="Sign out"
-            >
-              <LogOut size={16} color="#9BA3B2" />
-            </button>
-          </div>
-        )}
-      </div>
+              <button
+                onClick={onSignOut}
+                className="signout-icon"
+                style={{
+                  display: 'none',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 24,
+                  height: 24,
+                  padding: 0,
+                  borderRadius: 4,
+                  border: '1px solid transparent',
+                  background: 'transparent',
+                  color: '#9BA3B2',
+                  cursor: 'pointer',
+                }}
+                title="Sign out"
+              >
+                <LogOut size={16} color="#9BA3B2" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 };

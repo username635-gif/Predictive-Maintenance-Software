@@ -13,10 +13,12 @@ import workordersRouter from './routes/workorders';
 import roiRouter from './routes/roi';
 import alertsRouter from './routes/alerts';
 import pigRouter from './routes/pig';
+import auditRouter from './routes/audit';
 import { errorHandler } from './middleware/errorHandler';
 import { mockDatabase } from './data/mockDatabase';
 
 dotenv.config();
+
 
 const PORT = process.env.PORT || 8080;
 const app = express();
@@ -102,6 +104,8 @@ app.use('/api/v1/workorders', workordersRouter);
 app.use('/api/v1/roi', roiRouter);
 app.use('/api/v1/alerts', alertsRouter);
 app.use('/api/v1/pig', pigRouter);
+app.use('/api/v1/audit', auditRouter);
+
 
 // ───────────────────────────── Error Handler ─────────────────────────────────
 app.use(errorHandler);

@@ -19,9 +19,36 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
+import json
+import os
+from pathlib import Path
+
 import structlog
 
 log = structlog.get_logger()
+
+# ─────────────────────────────── Offline alarm outputs ───────────────────────────────
+
+# Local state file for technician tablets / alarm panels to poll.
+# Placed alongside gateway DB by default.
+ALARM_STATE_FILENAME = Path("edge_alarm_state.json")
+ALARM_EVENTS_LOG_FILENAME = Path("edge_alarm_events.log")
+
+
+def _default_paths_from_env() -> tuple[Path, Path]:
+    """Derive local alarm artifacts from env so edge can relocate its DB.
+
+    Uses DB_PATH as the source of truth when available.
+    """
+    db_path = os.environ.get("DB_PATH") if "os" in globals() else None
+    # local_rules.py may be imported independently; keep it robust.
+    # If DB_PATH exists and is a relative filename, place artifacts next to it.
+    if db_path:
+        p = Path(db_path)
+        base_dir = p.parent if str(p.parent) not in (".", "") else Path(".")
+        return base_dir / ALARM_STATE_FILENAME.name, base_dir / ALARM_EVENTS_LOG_FILENAME.name
+    return Path(ALARM_STATE_FILENAME), Path(ALARM_EVENTS_LOG_FILENAME)
+
 
 
 @dataclass
@@ -124,11 +151,63 @@ for r in RULES:
 
 
 # ─────────────────────────────── Engine ───────────────────────────────────────
+def _rule_severity(rule_id: str) -> str:
+    for r in RULES:
+        if r.rule_id == rule_id:
+            return r.severity
+    return "warning"
+
+
 class RulesEngine:
+
     def __init__(self, conn: sqlite3.Connection):
         self._conn = conn
         # Track active alarms to avoid duplicate inserts
-        self._active: dict[str, str] = {}   # sensor_id → rule_id
+        self._active: dict[str, str] = {}   # sensor_id|rule_id -> rule_id
+
+        # Local offline alert artifacts
+        self._alarm_state_path, self._alarm_events_log_path = _default_paths_from_env()
+        self._ensure_artifacts()
+
+
+    def _ensure_artifacts(self) -> None:
+        self._alarm_state_path.parent.mkdir(parents=True, exist_ok=True)
+        if not self._alarm_state_path.exists():
+            self._alarm_state_path.write_text(
+                json.dumps({"critical_active": False, "active_critical": [], "updated_at": None}, indent=2),
+                encoding="utf-8",
+            )
+
+        if not self._alarm_events_log_path.exists():
+            self._alarm_events_log_path.write_text("", encoding="utf-8")
+
+    def _write_alarm_state(self) -> None:
+        active_critical = [k for k, rule_id in self._active.items() if _rule_severity(rule_id) == "critical"]
+        payload = {
+            "critical_active": len(active_critical) > 0,
+            "active_critical": active_critical,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self._alarm_state_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    def _append_alarm_event(self, alarm: dict) -> None:
+        # Intended for tablet apps / local tooling that can tail this file.
+        line = json.dumps(
+            {
+                "timestamp": alarm.get("timestamp"),
+                "rule_id": alarm.get("rule_id"),
+                "sensor_id": alarm.get("sensor_id"),
+                "severity": alarm.get("severity"),
+                "message": alarm.get("message"),
+            },
+            ensure_ascii=False,
+        )
+        with self._alarm_events_log_path.open("a", encoding="utf-8") as f:
+            f.write(line + "\n")
+
+    def _maybe_update_alarm_outputs(self) -> None:
+        # Update local state file after any critical alarm state change.
+        self._write_alarm_state()
 
     def evaluate(self, reading: dict) -> list[dict]:
         """Evaluate all applicable rules against a sensor reading.
@@ -139,6 +218,7 @@ class RulesEngine:
         fired = []
 
         for rule in rules:
+
             triggered = False
             value = reading["value"]
 
@@ -152,9 +232,17 @@ class RulesEngine:
                 alarm = self._fire_alarm(rule, reading)
                 fired.append(alarm)
                 self._active[key] = alarm["timestamp"]
+                # Minimal audible/visual output: local alarm log + state file.
+                self._append_alarm_event(alarm)
+                if rule.severity == "critical":
+                    self._maybe_update_alarm_outputs()
             elif not triggered and key in self._active:
                 self._clear_alarm(reading["sensor_id"], rule.rule_id)
                 del self._active[key]
+                # If we just cleared a critical, update outputs.
+                if rule.severity == "critical":
+                    self._maybe_update_alarm_outputs()
+
 
         return fired
 

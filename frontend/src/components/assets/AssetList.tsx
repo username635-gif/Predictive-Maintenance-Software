@@ -160,9 +160,39 @@ export const AssetList: React.FC = () => {
         padding: '6px 12px', borderTop: '1px solid var(--border)',
         flexShrink: 0, background: '#131720',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: 'var(--text-muted)' }}>
-          <Clock size={10} />
-          Live · updating every 2s
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '10px',
+            color: 'var(--text-muted)',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Clock size={10} />
+            Live · updating every 2s
+          </div>
+
+          {String((import.meta as any).env?.VITE_DEMO_MODE) === 'true' && (
+
+            <div
+              style={{
+                padding: '2px 8px',
+                borderRadius: 999,
+                border: '1px solid rgba(212, 162, 75, 0.45)',
+                background: 'rgba(212, 162, 75, 0.14)',
+                color: '#FFD00A',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.4px',
+              }}
+              title="Demo mode is enabled"
+            >
+              DEMO MODE — synthetic data
+            </div>
+          )}
         </div>
       </div>
     </div>

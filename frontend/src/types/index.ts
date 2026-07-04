@@ -82,6 +82,18 @@ export interface ExplanationFeature {
   plain_english: string;
 }
 
+export interface ModelMetadata {
+  version: string;
+  validated: boolean;
+  validation_note?: string;
+  training_data_description?: string;
+  validation_method?: string;
+  last_validated_date?: string | null;
+  precision?: number | null;
+  recall?: number | null;
+  false_positive_rate?: number | null;
+}
+
 export interface PredictionResult {
   id: string;
   segment_id: string;
@@ -96,7 +108,9 @@ export interface PredictionResult {
   explanation: ExplanationFeature[];
   model_version: string;
   confidence: number;               // 0–1
+  model_metadata?: ModelMetadata;
 }
+
 
 // ─── Work Orders ──────────────────────────────────────────────────────────────
 
