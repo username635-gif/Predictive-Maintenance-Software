@@ -11,7 +11,8 @@ export type AuditActionType =
   | 'workorder_create'
   | 'workorder_update'
   | 'escalate'
-  | 'sim_toggle';
+  | 'sim_toggle'
+  | 'gateway_register';
 
 // Headers are reserved for future generic usage.
 const DEFAULT_ACTION_HEADER = 'x-action-type';

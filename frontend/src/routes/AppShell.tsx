@@ -6,6 +6,8 @@ import { LongitudinalView } from '../components/longitudinal/LongitudinalView';
 import { AssetList } from '../components/assets/AssetList';
 import { DetailDrawer } from '../components/drawer/DetailDrawer';
 import { LeakAlertModal } from '../components/alerts/LeakAlertModal';
+import GatewayConfigGatewayModalManager from '../components/gateways/GatewayConfigGatewayModalManager';
+
 import { useStore } from '../store/useStore';
 import { useOfflineDetector } from '../hooks/useOffline';
 import { useSimulator } from '../hooks/useSimulator';
@@ -105,8 +107,12 @@ export const AppShell: React.FC = () => {
         {activeModal === 'report' && <ComplianceReportModal onClose={closeModal} />}
       </Suspense>
 
+      {/* Gateway config modal manager (wired to gateway-config-create/edit events) */}
+      <GatewayConfigGatewayModalManager />
+
       {hasUnacknowledgedLeak && <LeakAlertModal />}
     </div>
   );
 };
+
 

@@ -14,10 +14,22 @@ import roiRouter from './routes/roi';
 import alertsRouter from './routes/alerts';
 import pigRouter from './routes/pig';
 import auditRouter from './routes/audit';
+import gatewaysRouter from './routes/gateways';
 import { errorHandler } from './middleware/errorHandler';
 import { mockDatabase } from './data/mockDatabase';
+import { getPgPool } from './db/pg';
+
 
 dotenv.config();
+
+// Await Postgres connection before starting HTTP server (fix startup race).
+getPgPool().catch((e) => {
+  console.error('[Postgres] Failed to connect during startup:', e);
+  process.exit(1);
+});
+
+
+
 
 
 const PORT = process.env.PORT || 8080;
@@ -104,7 +116,9 @@ app.use('/api/v1/workorders', workordersRouter);
 app.use('/api/v1/roi', roiRouter);
 app.use('/api/v1/alerts', alertsRouter);
 app.use('/api/v1/pig', pigRouter);
+app.use('/api/v1/gateways', gatewaysRouter);
 app.use('/api/v1/audit', auditRouter);
+
 
 
 // ───────────────────────────── Error Handler ─────────────────────────────────

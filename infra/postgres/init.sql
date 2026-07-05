@@ -55,12 +55,13 @@ DO $$
 BEGIN
     -- Create enum type only if it doesn't exist
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'audit_action_type') THEN
-        CREATE TYPE audit_action_type AS ENUM (
+    CREATE TYPE audit_action_type AS ENUM (
             'alert_ack',
             'workorder_create',
             'workorder_update',
             'escalate',
-            'sim_toggle'
+            'sim_toggle',
+            'gateway_register'
         );
     END IF;
 END $$;
@@ -78,6 +79,35 @@ CREATE TABLE IF NOT EXISTS audit_log (
     new_state       JSONB NOT NULL,
     ip_address      INET
 );
+
+-- Gateways table
+-- Represents configured gateways (not telemetry/heartbeats)
+CREATE TABLE IF NOT EXISTS gateways (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    protocol       TEXT NOT NULL,
+    source_type    TEXT NOT NULL CHECK (source_type IN ('real','simulator')),
+    segment_id     TEXT NOT NULL,
+    last_seen_at   TIMESTAMPTZ,
+    status          TEXT NOT NULL DEFAULT 'unknown',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Gateway heartbeat / connectivity state (per connection attempt)
+CREATE TABLE IF NOT EXISTS gateway_heartbeats (
+    gateway_id     TEXT NOT NULL REFERENCES gateways(id) ON DELETE CASCADE,
+    timestamp      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    success        BOOLEAN NOT NULL,
+    error_message  TEXT
+);
+
+-- Helpful indexes
+CREATE INDEX IF NOT EXISTS idx_gh_gateway ON gateway_heartbeats(gateway_id);
+CREATE INDEX IF NOT EXISTS idx_gh_timestamp ON gateway_heartbeats(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_gw_segment ON gateways(segment_id);
+CREATE INDEX IF NOT EXISTS idx_gw_status ON gateways(status);
+CREATE INDEX IF NOT EXISTS idx_gw_last_seen ON gateways(last_seen_at);
+
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_wo_segment ON work_orders(segment_id);

@@ -9,7 +9,7 @@ export type SensorType =
   | 'fiber_optic_das'
   | 'vibration_accelerometer';
 
-export type Protocol = 'OPC-UA' | 'MQTT' | 'Modbus RTU' | 'HART' | 'DNP3' | 'LoRaWAN' | 'IEPE' | 'Ethernet/IP';
+export type Protocol = 'OPC-UA' | 'MQTT' | 'Modbus TCP' | 'HART' | 'DNP3' | 'LoRaWAN' | 'IEPE' | 'Ethernet/IP';
 
 export type HealthStatus = 'good' | 'warning' | 'critical' | 'unknown';
 
