@@ -3,6 +3,8 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { GatewayConfig } from '../../types/gateway';
 
 import { useGatewayConfigModalManager } from '../../store/useGatewayConfigModal';
+import { apiBaseUrl } from '../../utils/apiBase';
+
 
 
 
@@ -43,8 +45,9 @@ const RegisteredGatewaysList: React.FC<Props> = ({ onEditGateway }) => {
 
       try {
         setLoadError(null);
-        const resp = await fetch('/api/v1/gateways');
+        const resp = await fetch(`${apiBaseUrl()}/api/v1/gateways`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
         const data = (await resp.json()) as GatewayListResponse;
         if (!cancelled) setGateways(data.gateways);
       } catch (e) {

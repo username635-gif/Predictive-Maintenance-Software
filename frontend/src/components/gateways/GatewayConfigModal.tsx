@@ -545,14 +545,14 @@ export default function GatewayConfigModal(props: GatewayConfigModalProps) {
     );
   }, [protocol, mqtt, opcua, modbus]);
 
-  if (!isOpen) return null;
-
   const canSave = useMemo(() => {
     if (!name.trim()) return false;
     if (!segment_assignment.trim()) return false;
     if (!protocolList.includes(protocol)) return false;
     return true;
   }, [name, segment_assignment, protocol]);
+
+  if (!isOpen) return null;
 
   const handleSave = async () => {
     setToast(null);

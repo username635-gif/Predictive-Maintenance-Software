@@ -3,6 +3,8 @@ import { useStore } from '../../store/useStore';
 import type { GatewayConfig } from '../../types/gateway';
 import GatewayConfigModal from './GatewayConfigModal';
 import { useGatewayConfigModalManager } from '../../store/useGatewayConfigModal';
+import { apiBaseUrl } from '../../utils/apiBase';
+
 
 type Toast = { type: 'success' | 'error'; message: string } | null;
 
@@ -65,7 +67,8 @@ export default function GatewayConfigGatewayModalManager(_props: Props) {
     setToast(null);
     try {
       if (mode === 'create') {
-        const resp = await fetch('/api/v1/gateways', {
+        const resp = await fetch(`${apiBaseUrl()}/api/v1/gateways`, {
+
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -78,7 +81,7 @@ export default function GatewayConfigGatewayModalManager(_props: Props) {
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       } else {
-        const resp = await fetch(`/api/v1/gateways/${encodeURIComponent(gw.id)}` , {
+        const resp = await fetch(`${apiBaseUrl()}/api/v1/gateways/${encodeURIComponent(gw.id)}` , {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

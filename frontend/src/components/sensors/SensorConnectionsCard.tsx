@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { apiBaseUrl } from '../../utils/apiBase';
+
 
 type Protocol = 'MQTT' | 'OPC-UA' | 'Modbus TCP' | 'REST API';
 
@@ -68,7 +70,8 @@ const SensorConnectionsCard: React.FC = () => {
     async function load() {
       try {
         setLoadError(null);
-        const resp = await fetch('/api/v1/gateways/status');
+        const resp = await fetch(`${apiBaseUrl()}/api/v1/gateways/status`);
+
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = (await resp.json()) as GatewaysStatusResponse;
         if (!cancelled) setStatusRows(data.protocols);
