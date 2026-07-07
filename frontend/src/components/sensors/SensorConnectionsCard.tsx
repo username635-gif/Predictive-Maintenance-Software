@@ -76,7 +76,53 @@ const SensorConnectionsCard: React.FC = () => {
         const data = (await resp.json()) as GatewaysStatusResponse;
         if (!cancelled) setStatusRows(data.protocols);
       } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : 'Failed to load');
+        if (cancelled) return;
+
+        const message = e instanceof Error ? e.message : 'Failed to load';
+        setLoadError(message);
+
+        // Avoid leaving per-protocol rows stuck on "Loading..." forever.
+        // Show an honest "Unavailable" state for each protocol.
+        const fallbackRows: ProtocolGatewayStatusRow[] = [
+          {
+            protocol: 'MQTT',
+            status_dot_color: '#9BA3B2',
+            status_label: 'Unavailable',
+            last_success_at: null,
+            device_counts: { real: 0, simulator: 0 },
+            total_devices: 0,
+            error_count_24h: 0,
+          },
+          {
+            protocol: 'OPC-UA',
+            status_dot_color: '#9BA3B2',
+            status_label: 'Unavailable',
+            last_success_at: null,
+            device_counts: { real: 0, simulator: 0 },
+            total_devices: 0,
+            error_count_24h: 0,
+          },
+          {
+            protocol: 'Modbus TCP',
+            status_dot_color: '#9BA3B2',
+            status_label: 'Unavailable',
+            last_success_at: null,
+            device_counts: { real: 0, simulator: 0 },
+            total_devices: 0,
+            error_count_24h: 0,
+          },
+          {
+            protocol: 'REST API',
+            status_dot_color: '#9BA3B2',
+            status_label: 'Unavailable',
+            last_success_at: null,
+            device_counts: { real: 0, simulator: 0 },
+            total_devices: 0,
+            error_count_24h: 0,
+          },
+        ];
+
+        setStatusRows(fallbackRows);
       }
     }
 
