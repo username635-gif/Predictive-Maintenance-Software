@@ -229,9 +229,33 @@ export const PipelineMap: React.FC = () => {
           background: 'rgba(22,27,36,0.92)', border: '1px solid var(--border)',
         borderRadius: '6px', padding: '10px 14px', backdropFilter: 'blur(4px)',
       }}>
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', letterSpacing: '0.5px' }}>
-          SEGMENT HEALTH
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
+            SEGMENT HEALTH
+          </div>
+
+          {String((import.meta as any).env?.VITE_DEMO_MODE) === 'true' && (
+            <div
+              style={{
+                padding: '2px 8px',
+                borderRadius: 999,
+                border: '1px solid rgba(212, 162, 75, 0.45)',
+                background: 'rgba(212, 162, 75, 0.14)',
+                color: '#FFD00A',
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.4px',
+                fontSize: 10,
+                fontWeight: 900,
+                whiteSpace: 'nowrap',
+              }}
+              title="Segment health and sensor readings are simulated in demo mode"
+            >
+              SIMULATED DATA
+            </div>
+          )}
         </div>
+
         {[['#5ABFA5', 'Good (70–100%)'], ['#D4A24B', 'Warning (40–69%)'], ['#F06A50', 'Critical (0–39%)']].map(([c, l]) => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <div style={{ width: '24px', height: '4px', background: c, borderRadius: '2px' }} />

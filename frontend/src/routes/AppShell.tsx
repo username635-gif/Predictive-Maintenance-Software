@@ -11,6 +11,7 @@ import GatewayConfigGatewayModalManager from '../components/gateways/GatewayConf
 import { useStore } from '../store/useStore';
 import { useOfflineDetector } from '../hooks/useOffline';
 import { useSimulator } from '../hooks/useSimulator';
+
 import { useNavigate } from 'react-router-dom';
 import { clearRosSession } from '../auth/rosSession';
 import { Suspense, lazy } from 'react';
@@ -26,7 +27,12 @@ export const AppShell: React.FC = () => {
 
   // Global hooks
   useOfflineDetector();
-  useSimulator();
+
+  const demoMode = String((import.meta as any).env?.VITE_DEMO_MODE) === 'true';
+  if (demoMode) {
+    useSimulator();
+  }
+
 
   const { viewMode, activeModal, openModal, closeModal, alerts } = useStore();
   const hasUnacknowledgedLeak = alerts.some(a => a.type === 'leak' && !a.acknowledged);
