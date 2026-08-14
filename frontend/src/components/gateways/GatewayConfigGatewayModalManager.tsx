@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store/useStore';
 import type { GatewayConfig } from '../../types/gateway';
 import GatewayConfigModal from './GatewayConfigModal';
-import { useGatewayConfigModalManager } from '../../store/useGatewayConfigModal';
 import { api } from '../../services/api';
 
 
@@ -57,7 +56,6 @@ export default function GatewayConfigGatewayModalManager(_props: Props) {
     setOpen(false);
   };
 
-  const { triggerGatewayRefresh } = useGatewayConfigModalManager();
 
   const onSave = async (gw: GatewayConfig) => {
     setToast(null);
@@ -81,7 +79,6 @@ export default function GatewayConfigGatewayModalManager(_props: Props) {
       }
 
       await fetchGateways();
-      triggerGatewayRefresh();
       setOpen(false);
     } catch (e) {
       setToast({ type: 'error', message: e instanceof Error ? e.message : 'Save failed' });

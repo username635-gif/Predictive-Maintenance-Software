@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { GatewayConfig } from '../../types/gateway';
 
-import { useGatewayConfigModalManager } from '../../store/useGatewayConfigModal';
 import { useStore } from '../../store/useStore';
 
 
@@ -20,7 +19,6 @@ function formatIsoOrNull(iso: string | null): string {
 const RegisteredGatewaysList: React.FC<Props> = ({ onEditGateway }) => {
   const [open, setOpen] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const { gatewayRefreshVersion } = useGatewayConfigModalManager();
   const gateways = useStore(state => state.gatewayList);
   const fetchGateways = useStore(state => state.fetchGateways);
 
@@ -47,7 +45,7 @@ const RegisteredGatewaysList: React.FC<Props> = ({ onEditGateway }) => {
       cancelled = true;
       clearInterval(t);
     };
-  }, [fetchGateways, gatewayRefreshVersion]);
+  }, [fetchGateways]);
 
   const sorted = useMemo(() => {
     const list = gateways ?? [];

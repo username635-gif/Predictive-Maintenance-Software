@@ -298,8 +298,6 @@ interface AppState {
   toggleSimulateOffline: () => void;
   triggerLeakSimulation: () => void;
   dismissLeakSimulation: () => void;
-  gatewayRefreshVersion: number;
-  triggerGatewayRefresh: () => void;
 
   fetchGateways: () => Promise<void>;
   replaceGatewayList: (gateways: GatewayConfig[]) => void;
@@ -386,9 +384,6 @@ export const useStore = create<AppState>((set, get) => ({
     set({ simulatingLeak: false });
   },
 
-  // Shared counter for gateway list refreshes. Increment to force a reload.
-  gatewayRefreshVersion: 0,
-  triggerGatewayRefresh: () => set(s => ({ gatewayRefreshVersion: (s.gatewayRefreshVersion ?? 0) + 1 })),
 
   fetchGateways: async () => {
     try {
