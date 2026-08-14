@@ -1,4 +1,4 @@
-// ─── Core Sensor & Pipeline Types ────────────────────────────────────────────
+﻿// ─── Core Sensor & Pipeline Types ────────────────────────────────────────────
 
 export type SensorType =
   | 'ultrasonic_thickness'
@@ -30,55 +30,82 @@ export interface SensorHistoryPoint {
 
 export interface Sensor {
   id: string;
-  name: string;
-  type: SensorType;
-  protocol: Protocol;
-  segment_id: string;
-  mile_marker: number;
-  lat: number;
-  lng: number;
-  last_reading?: SensorReading;
-  history: SensorHistoryPoint[];
-  last_seen: string;
-  battery?: number;
-  status: 'online' | 'offline' | 'degraded';
+  asset_id: string;
+  sensor_type: string;
   unit: string;
-  normal_range: [number, number];
+  baseline_value: number | null;
+  baseline_updated_at: string | null;
+  hard_min: number | null;
+  hard_max: number | null;
+  manual_override_min: number | null;
+  manual_override_max: number | null;
+  created_at: string;
+  asset_name?: string;
+  platform?: string;
+  latitude?: number;
+  longitude?: number;
+  status: 'online' | 'offline';
+  last_value: number | null;
+  last_seen: string | null;
+
+  name?: string;
+  type?: SensorType;
+  protocol?: Protocol;
+  segment_id?: string;
+  mile_marker?: number;
+  lat?: number;
+  lng?: number;
+  last_reading?: SensorReading;
+  history?: SensorHistoryPoint[];
+  battery?: number;
+  normal_range?: [number, number];
 }
 
 export interface PipelineSegment {
   id: string;
   name: string;
-  mile_start: number;
-  mile_end: number;
-  coordinates: [number, number][];   // [lat, lng][]
-  health_score: number;              // 0–100
-  health_status: HealthStatus;
-  sensors: string[];                 // sensor IDs
-  last_pig_run: string | null;
-  next_pig_due: string | null;
-  material: string;
-  diameter_inches: number;
-  wall_thickness_mm: number;
-  operating_pressure_psi: number;
-  max_pressure_psi: number;
-  installation_year: number;
-  coating_type: string;
-}
+  platform: string;
+  line: string | null;
+  zone: 'good' | 'warning' | 'critical' | string | null;
+  latitude: number | null;
+  longitude: number | null;
+  replacement_cost: number | null;
+  downtime_cost_per_hour: number | null;
+  priority: 'low' | 'medium' | 'high' | 'critical' | 'unset';
+  is_low_priority: boolean;
+  route: { lat: number; lng: number }[] | null;
+  health_score: number | null;
+  health_score_open_alerts: number;
+  created_at: string;
+  updated_at: string;
 
-// ─── AI Prediction Types ──────────────────────────────────────────────────────
+  mile_start?: number;
+  mile_end?: number;
+  coordinates?: [number, number][];
+  health_status?: HealthStatus;
+  sensors?: string[];
+  last_pig_run?: string | null;
+  next_pig_due?: string | null;
+  material?: string;
+  diameter_inches?: number;
+  wall_thickness_mm?: number;
+  operating_pressure_psi?: number;
+  max_pressure_psi?: number;
+  installation_year?: number;
+  coating_type?: string;
+}
 
 export interface RootCauseProbability {
   cause: string;
-  probability: number;              // 0–1
+  probability: number;
   icon: string;
 }
 
 export interface ExplanationFeature {
   feature: string;
-  contribution: number;             // 0–100 %
+  contribution: number;
   direction: 'positive' | 'negative';
-  value: string;                    // human-readable current value
+  value: string;
   plain_english: string;
 }
 
@@ -98,21 +125,21 @@ export interface PredictionResult {
   id: string;
   segment_id: string;
   created_at: string;
-  anomaly_score: number;            // 0–1
-  rul_days: number;
-  rul_lower: number;
-  rul_upper: number;
-  root_cause: RootCauseProbability[];
-  primary_failure_mode: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  explanation: ExplanationFeature[];
-  model_version: string;
-  confidence: number;               // 0–1
+  anomaly_score: number | null;
+  rul_days: number | null;
+  rul_lower: number | null;
+  rul_upper: number | null;
+  failure_mode: string | null;
+  severity: 'low' | 'medium' | 'high' | 'critical' | null;
+  model_version: string | null;
+  raw_output: unknown;
+
+  root_cause?: RootCauseProbability[];
+  primary_failure_mode?: string;
+  explanation?: ExplanationFeature[];
+  confidence?: number;
   model_metadata?: ModelMetadata;
 }
-
-
-// ─── Work Orders ──────────────────────────────────────────────────────────────
 
 export interface PartItem {
   part_number: string;
@@ -128,47 +155,65 @@ export interface WorkOrder {
   id: string;
   title: string;
   segment_id: string;
-  asset_id: string;
   status: WorkOrderStatus;
   priority: WorkOrderPriority;
-  description: string;
-  repair_procedure: string;
+  description: string | null;
+  repair_procedure: string | null;
   estimated_downtime_hours: number;
-  required_tools: string[];
-  safety_notes: string[];
-  parts_list: PartItem[];
   assigned_to: string | null;
   created_at: string;
   updated_at: string;
   due_date: string | null;
   completed_at: string | null;
-  technician_notes: string | null;
-  photos: string[];
-  actual_root_cause: string | null;
   prediction_id: string | null;
-  // Offline queue metadata
+  technician_notes: string | null;
+  actual_root_cause: string | null;
+  alert_id: string | null;
+
+  asset_id?: string;
+  required_tools?: string[];
+  safety_notes?: string[];
+  parts_list?: PartItem[];
+  photos?: string[];
+
   _queued?: boolean;
   _local_id?: string;
 }
-
-// ─── Alerts ───────────────────────────────────────────────────────────────────
 
 export type AlertType = 'leak' | 'pressure_surge' | 'corrosion' | 'sensor_offline' | 'anomaly' | 'cathodic_failure';
 
 export interface Alert {
   id: string;
-  type: AlertType;
-  segment_id: string;
-  timestamp: string;
-  severity: 'warning' | 'critical';
-  message: string;
-  confidence: number;               // 0–1
-  location: { lat: number; lng: number; radius_m: number } | null;
-  acknowledged: boolean;
-  triggering_sensors: string[];
-}
+  asset_id: string;
+  prediction_id: string | null;
+  root_cause_signature: string;
+  source: 'rule' | 'ml';
+  tier: 'red' | 'yellow' | 'green';
+  trigger_summary: string;
+  recommended_action: string;
+  confidence: number | null;
+  status: 'open' | 'acknowledged' | 'escalated' | 'resolved';
+  dwell_start_at: string | null;
+  ignored_count: number;
+  escalated_to: string | null;
+  cost_avoided_estimate: number | null;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  asset_name?: string;
+  platform?: string;
+  line?: string;
+  zone?: string;
 
-// ─── PIG Inspection ───────────────────────────────────────────────────────────
+  type?: AlertType;
+  segment_id?: string;
+  timestamp?: string;
+  severity?: 'warning' | 'critical';
+  message?: string;
+  location?: { lat: number; lng: number; radius_m: number } | null;
+  acknowledged?: boolean;
+  triggering_sensors?: string[];
+}
 
 export interface PIGFinding {
   mile_marker: number;
@@ -192,8 +237,6 @@ export interface PIGRun {
   summary: string;
 }
 
-// ─── ROI ──────────────────────────────────────────────────────────────────────
-
 export interface ROIConfig {
   downtime_cost_per_hour: number;
   avg_emergency_repair_cost: number;
@@ -210,8 +253,6 @@ export interface ROIMonthEntry {
   planned_vs_emergency_savings: number;
   total_roi: number;
 }
-
-// ─── Connectivity ─────────────────────────────────────────────────────────────
 
 export interface EdgeGatewayStatus {
   id: string;
@@ -236,7 +277,5 @@ export interface ConnectivityStatus {
   offline_buffer_pct: number;
 }
 
-// ─── UI State ─────────────────────────────────────────────────────────────────
-
 export type ViewMode = 'map' | 'longitudinal';
-export type ActiveModal = 'roi' | 'sensors' | 'pig' | 'workorders' | 'leak' | 'report' | null;
+export type ActiveModal = 'roi' | 'sensors' | 'pig' | 'workorders' | 'leak' | 'report' | 'gateways' | null;

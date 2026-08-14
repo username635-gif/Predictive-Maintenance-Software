@@ -1,5 +1,4 @@
-import React from 'react';
-import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
+﻿import React from 'react';
 import type { Sensor } from '../../types';
 import { sensorTypeLabel } from '../../utils/formatting';
 
@@ -7,15 +6,27 @@ interface SparklineProps {
   sensor: Sensor;
 }
 
+// Rebuilt against the real Sensor shape. No normal_range/last_reading/
+// mile_marker/history/type fields exist on the real schema -- using
+// hard_min/hard_max (or manual_override_min/max when set) as the real
+// range, last_value as the current reading, sensor_type/asset_name as
+// labels. The sparkline chart is removed: nothing currently fetches
+// per-sensor historical readings to the frontend (sensor_readings table
+// exists server-side but isn't wired here yet) -- a real gap, not faked
+// with a flat line.
 export const SensorSparkline: React.FC<SparklineProps> = ({ sensor }) => {
-  const isOutOfRange = sensor.last_reading
-    ? (sensor.last_reading.value < sensor.normal_range[0] ||
-       sensor.last_reading.value > sensor.normal_range[1])
-    : false;
+  const rangeMin = sensor.manual_override_min ?? sensor.hard_min;
+  const rangeMax = sensor.manual_override_max ?? sensor.hard_max;
 
-  const color = sensor.status === 'offline' ? '#5A5F66' :
-                isOutOfRange ? '#E5484D' :
-                sensor.status === 'degraded' ? '#F76808' : '#0090FF';
+  const isOutOfRange =
+    sensor.last_value !== null && rangeMin !== null && rangeMax !== null
+      ? sensor.last_value < rangeMin || sensor.last_value > rangeMax
+      : false;
+
+  const color =
+    sensor.status === 'offline' ? '#5A5F66' :
+    isOutOfRange ? '#E5484D' :
+    '#0090FF';
 
   return (
     <div style={{
@@ -27,17 +38,17 @@ export const SensorSparkline: React.FC<SparklineProps> = ({ sensor }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
         <div>
           <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            {sensorTypeLabel(sensor.type)}
+            {sensorTypeLabel(sensor.sensor_type)}
           </div>
           <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-            {sensor.id} · Mile {sensor.mile_marker}
+            {sensor.id}{sensor.asset_name ? ` - ${sensor.asset_name}` : ''}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{
             fontFamily: 'var(--font-mono)', fontSize: '14px', fontWeight: 700, color,
           }}>
-            {sensor.last_reading?.value.toFixed(2)} {sensor.unit}
+            {sensor.last_value !== null ? sensor.last_value.toFixed(2) : '-'} {sensor.unit}
           </div>
           <div style={{
             fontSize: '9px',
@@ -48,35 +59,20 @@ export const SensorSparkline: React.FC<SparklineProps> = ({ sensor }) => {
         </div>
       </div>
 
-      {/* Mini sparkline */}
-      <div style={{ height: '36px' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={sensor.history}>
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke={color}
-              strokeWidth={1.5}
-              dot={false}
-              isAnimationActive={false}
-            />
-            <Tooltip
-              contentStyle={{
-                background: '#252830', border: '1px solid #3A3D48',
-                borderRadius: '4px', padding: '4px 8px', fontSize: '10px',
-              }}
-              itemStyle={{ color: '#E8ECEF' }}
-              formatter={(v: number) => [`${v.toFixed(2)} ${sensor.unit}`, '']}
-              labelFormatter={() => ''}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      {/* Sparkline removed -- no real per-sensor history reaches the
+          frontend yet (see comment above). */}
+      <div style={{
+        height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '10px', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: '4px',
+      }}>
+        History not yet available
       </div>
 
-      {/* Normal range indicator */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
         <span style={{ fontSize: '9px', color: '#3A3D48' }}>
-          Normal: {sensor.normal_range[0]}–{sensor.normal_range[1]} {sensor.unit}
+          {rangeMin !== null && rangeMax !== null
+            ? `Normal: ${rangeMin}-${rangeMax} ${sensor.unit}`
+            : 'Normal range not set'}
         </span>
         {isOutOfRange && (
           <span style={{ fontSize: '9px', color: '#E5484D', fontWeight: 600 }}>OUT OF RANGE</span>

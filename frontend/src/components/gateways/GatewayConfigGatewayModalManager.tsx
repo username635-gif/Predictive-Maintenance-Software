@@ -3,19 +3,16 @@ import { useStore } from '../../store/useStore';
 import type { GatewayConfig } from '../../types/gateway';
 import GatewayConfigModal from './GatewayConfigModal';
 import { useGatewayConfigModalManager } from '../../store/useGatewayConfigModal';
-import { apiBaseUrl } from '../../utils/apiBase';
+import { api } from '../../services/api';
 
 
 type Toast = { type: 'success' | 'error'; message: string } | null;
 
 
-type Props = {
-  onGatewayChanged?: () => void | Promise<void>;
-};
+type Props = {};
 
 export default function GatewayConfigGatewayModalManager(_props: Props) {
-  const { closeModal } = useStore();
-
+  const { fetchGateways } = useStore();
 
   // Local state only; modal visibility is driven by this component.
   const [open, setOpen] = useState(false);
@@ -58,7 +55,6 @@ export default function GatewayConfigGatewayModalManager(_props: Props) {
 
   const onClose = () => {
     setOpen(false);
-    closeModal();
   };
 
   const { triggerGatewayRefresh } = useGatewayConfigModalManager();
@@ -67,43 +63,31 @@ export default function GatewayConfigGatewayModalManager(_props: Props) {
     setToast(null);
     try {
       if (mode === 'create') {
-        const resp = await fetch(`${apiBaseUrl()}/api/v1/gateways`, {
-
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: gw.name,
-            protocol: gw.protocol,
-            source_type: gw.source,
-            segment_assignment: gw.segment_assignment,
-            status: gw.status,
-          }),
+        await api.createGateway({
+          name: gw.name,
+          protocol: gw.protocol,
+          source_type: gw.source,
+          segment_assignment: gw.segment_assignment,
+          status: gw.status,
         });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       } else {
-        const resp = await fetch(`${apiBaseUrl()}/api/v1/gateways/${encodeURIComponent(gw.id)}` , {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: gw.name,
-            protocol: gw.protocol,
-            source: gw.source,
-            segment_assignment: gw.segment_assignment,
-            status: gw.status,
-          }),
+        await api.updateGateway(gw.id, {
+          name: gw.name,
+          protocol: gw.protocol,
+          source: gw.source,
+          segment_assignment: gw.segment_assignment,
+          status: gw.status,
         });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       }
 
+      await fetchGateways();
       triggerGatewayRefresh();
-
       setOpen(false);
     } catch (e) {
       setToast({ type: 'error', message: e instanceof Error ? e.message : 'Save failed' });
       throw e;
     }
   };
-
 
   return (
     <>

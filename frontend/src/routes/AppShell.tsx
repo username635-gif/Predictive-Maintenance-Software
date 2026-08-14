@@ -10,17 +10,18 @@ import GatewayConfigGatewayModalManager from '../components/gateways/GatewayConf
 
 import { useStore } from '../store/useStore';
 import { useOfflineDetector } from '../hooks/useOffline';
-import { useSimulator } from '../hooks/useSimulator';
+import { connectSocket, disconnectSocket } from '../services/socket';
 
 import { useNavigate } from 'react-router-dom';
 import { clearRosSession } from '../auth/rosSession';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 
 const WorkOrderModal = lazy(() => import('../components/workorders/WorkOrderModal').then(m => ({ default: m.WorkOrderModal })));
 const ROIModal = lazy(() => import('../components/roi/ROIModal').then(m => ({ default: m.ROIModal })));
 const SensorHealthModal = lazy(() => import('../components/sensors/SensorHealthModal').then(m => ({ default: m.SensorHealthModal })));
 const PIGComparisonModal = lazy(() => import('../components/pig/PIGComparisonModal').then(m => ({ default: m.PIGComparisonModal })));
 const ComplianceReportModal = lazy(() => import('../components/reports/ComplianceReportModal').then(m => ({ default: m.ComplianceReportModal })));
+const GatewaysModal = lazy(() => import('../components/gateways/GatewaysModal').then(m => ({ default: m.GatewaysModal })));
 
 export const AppShell: React.FC = () => {
   const navigate = useNavigate();
@@ -30,14 +31,37 @@ export const AppShell: React.FC = () => {
 
   const demoMode = String((import.meta as any).env?.VITE_DEMO_MODE) === 'true';
   if (demoMode) {
-    useSimulator();
+
   }
 
 
-  const { viewMode, activeModal, openModal, closeModal, alerts } = useStore();
+  const {
+    viewMode, activeModal, openModal, closeModal, alerts,
+    applyStateInit, mergeActiveAlerts, mergeWorkOrderCreated, mergeAlertAcknowledged,
+  } = useStore();
   const hasUnacknowledgedLeak = alerts.some(a => a.type === 'leak' && !a.acknowledged);
 
+  // Real-time Socket.IO connection. Read-only by design -- see
+  // services/socket.ts JSDoc: work order creation and alert acknowledgment
+  // stay on the REST calls in useStore (api.createWorkOrder / api.acknowledgeAlert)
+  // to avoid the dual-write path found during the Socket.IO audit. This effect
+  // only ever registers *incoming* handlers, never emits a write.
+  useEffect(() => {
+    connectSocket({
+      onStateInit: (payload) => applyStateInit(payload),
+      onActiveAlerts: (alerts) => mergeActiveAlerts(alerts),
+      onWorkOrderCreated: (wo) => mergeWorkOrderCreated(wo),
+      onAlertAcknowledged: (alert) => mergeAlertAcknowledged(alert),
+      onConnectError: (message) => console.error('[socket] connect error:', message),
+    });
+
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
+
   const onSignOut = () => {
+    disconnectSocket();
     clearRosSession();
     navigate('/login', { replace: true });
   };
@@ -59,6 +83,7 @@ export const AppShell: React.FC = () => {
         <TopBar
           onOpenROI={() => openModal('roi')}
           onOpenSensors={() => openModal('sensors')}
+          onOpenGateways={() => openModal('gateways')}
           onOpenWorkOrders={() => openModal('workorders')}
           onOpenReport={() => openModal('report')}
           onSignOut={onSignOut}
@@ -91,7 +116,7 @@ export const AppShell: React.FC = () => {
                 pointerEvents: 'none',
               }}
             >
-              Click colour band to select segment · Use brush to zoom
+              Click colour band to select segment Â· Use brush to zoom
             </div>
           )}
         </div>
@@ -111,6 +136,7 @@ export const AppShell: React.FC = () => {
         {activeModal === 'sensors' && <SensorHealthModal onClose={closeModal} />}
         {activeModal === 'pig' && <PIGComparisonModal onClose={closeModal} />}
         {activeModal === 'report' && <ComplianceReportModal onClose={closeModal} />}
+        {activeModal === 'gateways' && <GatewaysModal onClose={closeModal} />}
       </Suspense>
 
       {/* Gateway config modal manager (wired to gateway-config-create/edit events) */}
@@ -120,5 +146,3 @@ export const AppShell: React.FC = () => {
     </div>
   );
 };
-
-

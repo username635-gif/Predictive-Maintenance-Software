@@ -3,18 +3,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { GatewayConfig } from '../../types/gateway';
 
 import { useGatewayConfigModalManager } from '../../store/useGatewayConfigModal';
-import { apiBaseUrl } from '../../utils/apiBase';
-
-
-
-
-
-
-type GatewayListResponse = {
-
-  gateways: GatewayConfig[];
-};
-
+import { useStore } from '../../store/useStore';
 
 
 type Props = {
@@ -30,39 +19,35 @@ function formatIsoOrNull(iso: string | null): string {
 
 const RegisteredGatewaysList: React.FC<Props> = ({ onEditGateway }) => {
   const [open, setOpen] = useState(true);
-  const [gateways, setGateways] = useState<GatewayConfig[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-
   const { gatewayRefreshVersion } = useGatewayConfigModalManager();
+  const gateways = useStore(state => state.gatewayList);
+  const fetchGateways = useStore(state => state.fetchGateways);
 
   useEffect(() => {
-
     let cancelled = false;
 
-
-
     async function load() {
-
       try {
         setLoadError(null);
-        const resp = await fetch(`${apiBaseUrl()}/api/v1/gateways`);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
-        const data = (await resp.json()) as GatewayListResponse;
-        if (!cancelled) setGateways(data.gateways);
+        await fetchGateways();
+        if (cancelled) return;
       } catch (e) {
-        if (!cancelled) setLoadError(e instanceof Error ? e.message : 'Failed to load');
+        if (!cancelled) {
+          setLoadError(e instanceof Error ? e.message : 'Failed to load');
+        }
       }
     }
 
     load();
-    const t = setInterval(load, 20_000);
+    const t = setInterval(() => {
+      void fetchGateways();
+    }, 20_000);
     return () => {
       cancelled = true;
       clearInterval(t);
     };
-  }, [gatewayRefreshVersion]);
-
+  }, [fetchGateways, gatewayRefreshVersion]);
 
   const sorted = useMemo(() => {
     const list = gateways ?? [];

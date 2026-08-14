@@ -1,0 +1,2 @@
+id,asset_name,platform,line,zone,tier,status,source,trigger_summary,recommended_action,confidence,cost_avoided_estimate,ignored_count,escalated_to,created_at,resolved_at,updated_at
+ALT-2026-28442,SEG-021 Mile 200-210,West Texas Pipeline,Mile 200-210,critical,yellow,open,rule,pressure_transmitter: 640psi,"Inspect for leak at the flagged asset. If seal is visibly leaking, tighten per spec torque. Replace if cracked.",,610000.00,0,,2026-08-11T09:39:43.907Z,,2026-08-11T09:39:43.907Z

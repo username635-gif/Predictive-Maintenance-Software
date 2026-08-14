@@ -101,6 +101,7 @@ interface TopBarProps {
   onOpenROI: () => void;
   onOpenSensors: () => void;
   onOpenWorkOrders: () => void;
+  onOpenGateways: () => void;
   onOpenReport: () => void;
   onSignOut?: () => void;
 }
@@ -109,6 +110,7 @@ interface TopBarProps {
 export const TopBar: React.FC<TopBarProps> = ({
   onOpenROI,
   onOpenSensors,
+  onOpenGateways,
   onOpenWorkOrders,
   onOpenReport,
   onSignOut,
@@ -231,6 +233,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       {/* Edge Gateway Status */}
       <button
+        onClick={onOpenGateways}
         title={`${connectivity.edge_gateways_online}/${connectivity.edge_gateways_total} edge gateways online`}
         style={{
           display: 'flex', alignItems: 'center', gap: '6px',

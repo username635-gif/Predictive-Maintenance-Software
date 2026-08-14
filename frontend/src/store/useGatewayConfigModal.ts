@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { GatewayConfig } from '../types/gateway';
+import { useStore } from './useStore';
 
 export type GatewayConfigModalManagerState = {
   isOpen: boolean;
@@ -22,11 +23,7 @@ export function useGatewayConfigModalManager(): GatewayConfigModalManagerState {
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [gateway, setGateway] = useState<GatewayConfig | undefined>(undefined);
 
-  const [gatewayRefreshVersion, setGatewayRefreshVersion] = useState(0);
-
-  const triggerGatewayRefresh = () => {
-    setGatewayRefreshVersion((v) => v + 1);
-  };
+  const { gatewayRefreshVersion, triggerGatewayRefresh } = useStore();
 
 
   const openCreate = () => {

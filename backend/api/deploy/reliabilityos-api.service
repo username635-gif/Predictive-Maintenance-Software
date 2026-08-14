@@ -1,0 +1,34 @@
+[Unit]
+Description=ReliabilityOS API
+After=network.target postgresql.service mosquitto.service
+Wants=postgresql.service mosquitto.service
+
+[Service]
+Type=simple
+# CHANGE THIS: the actual deploy path once the VPS is provisioned — this is a
+# placeholder, not something to trust blindly. Common convention is
+# /opt/reliabilityos/backend/api or /home/<deploy-user>/reliabilityos/backend/api
+WorkingDirectory=/opt/reliabilityos/backend/api
+ExecStart=/usr/bin/node dist/server.js
+
+# Load production environment variables from a file NOT committed to git.
+# This is where the real JWT_SECRET, real Postgres password, etc. live in
+# production — separate from your local backend/api/.env.
+EnvironmentFile=/opt/reliabilityos/backend/api/.env.production
+
+Restart=on-failure
+RestartSec=5
+
+# Run as a dedicated non-root user, not root. Create this user during VPS
+# setup: sudo useradd -r -s /bin/false reliabilityos
+User=reliabilityos
+Group=reliabilityos
+
+# Basic hardening — restricts what this process can touch on the box even
+# if compromised. Worth having given this handles real operational data.
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/reliabilityos/backend/api
+
+[Install]
+WantedBy=multi-user.target

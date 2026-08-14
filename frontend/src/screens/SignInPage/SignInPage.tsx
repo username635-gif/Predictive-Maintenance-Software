@@ -1,75 +1,123 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { setRosSession } from '../../auth/rosSession';
-import { AlertTriangle, Eye, EyeOff } from 'lucide-react';
+﻿import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { setRosSession, RosUser } from "../../auth/rosSession";
+import { apiBaseUrl } from "../../utils/apiBase";
+import { AlertTriangle, Eye, EyeOff } from "lucide-react";
 
 const COLORS = {
-  dividerLine: '#3B4560',
-  dividerText: '#6B7280',
-  label: '#9BA3B2',
-  placeholder: '#6B7280',
-  inputText: '#C8D0DC',
-  inputBg: '#1E2533',
-  focusBorder: '#378ADD',
-  border: '#3B4560',
-  errorBg: 'rgba(240, 106, 80, 0.10)',
-  errorBorder: 'rgba(240, 106, 80, 0.30)',
-  errorText: '#F06A50',
-  buttonBg: '#1E2533',
-  buttonHoverBg: '#2A3245',
+  dividerLine: "#3B4560",
+  dividerText: "#6B7280",
+  label: "#9BA3B2",
+  placeholder: "#6B7280",
+  inputText: "#C8D0DC",
+  inputBg: "#1E2533",
+  focusBorder: "#378ADD",
+  border: "#3B4560",
+  errorBg: "rgba(240, 106, 80, 0.10)",
+  errorBorder: "rgba(240, 106, 80, 0.30)",
+  errorText: "#F06A50",
+  buttonBg: "#1E2533",
+  buttonHoverBg: "#2A3245",
 };
 
 export const SignInPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [error, setError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("Invalid credentials. Please sign in with your company account.");
 
   const inputBase = useMemo(() => {
     return {
-      width: '100%',
+      width: "100%",
       height: 42,
-      padding: '0 14px',
+      padding: "0 14px",
       background: COLORS.inputBg,
-      border: '0.5px solid ' + COLORS.border,
+      border: "0.5px solid " + COLORS.border,
       borderRadius: 8,
       color: COLORS.inputText,
-      outline: 'none',
-      fontFamily: 'var(--font-mono)',
+      outline: "none",
+      fontFamily: "var(--font-mono)",
       fontSize: 14,
-      boxShadow: 'none',
+      boxShadow: "none",
     } as const;
   }, []);
 
-  const onDemoSuccess = () => {
-    // DEMO AUTH — replace with real SSO and API calls in production
-    setRosSession({ authenticated: true, role: 'engineer' });
-    navigate('/map', { replace: true });
+  // FAKE SSO â€” no real SSO integration exists. This button skips the backend
+  // entirely and fabricates a session so the UI keeps working tonight.
+  // Deliberately left in per a working decision on 2026-08-11 to repurpose
+  // it later rather than remove it now. DO NOT deploy or demo this to
+  // anyone but the developer while this bypass is in place â€” it grants
+  // "engineer" access to anyone who clicks it, no credentials required.
+  const onFakeSsoClick = () => {
+    console.warn(
+      "[SignInPage] FAKE SSO login used â€” this bypasses real auth entirely and is not safe for deploy/demo."
+    );
+    const fakeUser: RosUser = {
+      id: "demo-sso-user",
+      email: "demo@company.com",
+      name: "Demo Engineer",
+      role: "technician",
+    };
+    // exp far in the future so the client-side expiry check in rosSession
+    // doesn't immediately clear this fake session.
+    const fakeToken =
+      "fake." +
+      btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60 })) +
+      ".fake";
+    setRosSession({ token: fakeToken, user: fakeUser });
+    navigate("/map", { replace: true });
   };
 
-  const onSubmitEmailPassword = (e: React.FormEvent) => {
+  const onSubmitEmailPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
 
     setSubmitting(true);
-    try {
-      // DEMO AUTH — replace with real SSO and API calls in production
-      const emailOk = email.includes('@');
-      const passwordOk = password.trim().length >= 6;
+    setError(false);
 
-      if (emailOk && passwordOk) {
-        setError(false);
-        onDemoSuccess();
+    try {
+      const res = await fetch(`${apiBaseUrl()}/api/v1/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        let message = "Invalid credentials. Please sign in with your company account.";
+        if (res.status === 429) {
+          message = "Too many login attempts. Try again in a few minutes.";
+        }
+        setErrorMessage(message);
+        setError(true);
+        setPassword("");
         return;
       }
 
-      // Any other input => show error state
+      const data = await res.json();
+      if (typeof data.token !== "string" || !data.user) {
+        // Backend contract changed unexpectedly â€” fail loudly in console
+        // rather than silently mis-storing a broken session.
+        console.error("[SignInPage] Unexpected login response shape:", data);
+        setErrorMessage("Unexpected server response. Contact an administrator.");
+        setError(true);
+        return;
+      }
+
+      setRosSession({ token: data.token, user: data.user });
+      navigate("/map", { replace: true });
+    } catch (err) {
+      // Network failure: backend down, wrong VITE_API_BASE_URL, or CORS
+      // rejection. Indistinguishable from bad credentials in this UI right
+      // now â€” check the browser console/Network tab if this fires
+      // immediately on every attempt, since that points to config, not
+      // a typo'd password.
+      console.error("[SignInPage] Login request failed:", err);
+      setErrorMessage("Could not reach the server. Check your connection and try again.");
       setError(true);
-      // On error: clear password only, keep email populated
-      setPassword('');
     } finally {
       setSubmitting(false);
     }
@@ -77,69 +125,69 @@ export const SignInPage: React.FC = () => {
 
   const styles = {
     page: {
-      minHeight: '100vh',
-      width: '100%',
-      maxWidth: '100vw',
-      background: 'var(--bg-main)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: '24px 16px',
-      overflow: 'hidden',
+      minHeight: "100vh",
+      width: "100%",
+      maxWidth: "100vw",
+      background: "var(--bg-main)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: "24px 16px",
+      overflow: "hidden",
     } as React.CSSProperties,
     column: {
       width: 420,
-      maxWidth: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'stretch',
+      maxWidth: "100%",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "stretch",
     } as React.CSSProperties,
     card: {
-      width: '100%',
-      background: 'var(--bg-panel)',
-      border: '0.5px solid ' + COLORS.border,
+      width: "100%",
+      background: "var(--bg-panel)",
+      border: "0.5px solid " + COLORS.border,
       borderRadius: 10,
       padding: 40,
     } as React.CSSProperties,
     header: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'flex-start',
+      display: "flex",
+      flexDirection: "column" as const,
+      alignItems: "flex-start",
       gap: 6,
       marginBottom: 28,
     } as React.CSSProperties,
     headerLine1: {
-      display: 'flex',
-      alignItems: 'center',
+      display: "flex",
+      alignItems: "center",
       gap: 8,
     } as React.CSSProperties,
     headerReliabilityOS: {
       fontSize: 17,
       fontWeight: 500,
-      color: '#C8D0DC',
-      letterSpacing: '0.1px',
+      color: "#C8D0DC",
+      letterSpacing: "0.1px",
       lineHeight: 1.2,
     } as React.CSSProperties,
     headerLine2: {
       fontSize: 12,
-      color: '#9BA3B2',
+      color: "#9BA3B2",
       lineHeight: 1.2,
     } as React.CSSProperties,
     headerLine3: {
       fontSize: 11,
-      color: '#6B7280',
+      color: "#6B7280",
       lineHeight: 1.2,
     } as React.CSSProperties,
     headerDivider: {
       height: 0.5,
       background: COLORS.border,
-      width: '100%',
+      width: "100%",
       marginTop: 8,
     } as React.CSSProperties,
 
     field: {
-      display: 'flex',
-      flexDirection: 'column' as const,
+      display: "flex",
+      flexDirection: "column" as const,
       gap: 6,
       marginTop: 0,
     } as React.CSSProperties,
@@ -152,8 +200,8 @@ export const SignInPage: React.FC = () => {
     dividerWrap: {
       marginTop: 20,
       marginBottom: 20,
-      display: 'flex',
-      alignItems: 'center',
+      display: "flex",
+      alignItems: "center",
       gap: 12,
     } as React.CSSProperties,
     dividerLine: {
@@ -168,65 +216,65 @@ export const SignInPage: React.FC = () => {
     } as React.CSSProperties,
 
     passwordRow: {
-      position: 'relative',
-      width: '100%',
+      position: "relative",
+      width: "100%",
     } as React.CSSProperties,
     passwordInput: {
       paddingRight: 46,
     } as React.CSSProperties,
     eyeButton: {
-      position: 'absolute',
+      position: "absolute",
       right: 12,
-      top: '50%',
-      transform: 'translateY(-50%)',
+      top: "50%",
+      transform: "translateY(-50%)",
       height: 28,
       width: 28,
       borderRadius: 6,
-      border: 'none',
-      background: 'transparent',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      border: "none",
+      background: "transparent",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       color: COLORS.placeholder,
     } as React.CSSProperties,
 
     signInButton: {
       marginTop: 16,
-      width: '100%',
+      width: "100%",
       height: 42,
       background: COLORS.buttonBg,
-      border: '0.5px solid ' + COLORS.border,
+      border: "0.5px solid " + COLORS.border,
       borderRadius: 8,
       color: COLORS.inputText,
       fontSize: 14,
       fontWeight: 500,
-      cursor: 'pointer',
-      transition: 'background 0.15s, border-color 0.15s',
+      cursor: "pointer",
+      transition: "background 0.15s, border-color 0.15s",
     } as React.CSSProperties,
     forgot: {
       marginTop: 10,
-      width: '100%',
-      textAlign: 'right' as const,
+      width: "100%",
+      textAlign: "right" as const,
       fontSize: 12,
       color: COLORS.placeholder,
-      textDecoration: 'none',
-      cursor: 'pointer',
+      textDecoration: "none",
+      cursor: "pointer",
     } as React.CSSProperties,
 
     errorBox: {
       background: COLORS.errorBg,
-      border: '0.5px solid ' + COLORS.errorBorder,
+      border: "0.5px solid " + COLORS.errorBorder,
       borderRadius: 6,
-      padding: '10px 14px',
-      display: 'flex',
+      padding: "10px 14px",
+      display: "flex",
       gap: 10,
-      alignItems: 'flex-start',
+      alignItems: "flex-start",
       marginBottom: 12,
     } as React.CSSProperties,
     footer: {
       marginTop: 24,
-      textAlign: 'center' as const,
+      textAlign: "center" as const,
       fontSize: 11,
       color: COLORS.placeholder,
       lineHeight: 1.6,
@@ -260,40 +308,38 @@ export const SignInPage: React.FC = () => {
               </svg>
               <span style={styles.headerReliabilityOS}>ReliabilityOS</span>
             </div>
-            <div style={styles.headerLine2}>Permian 500 · Pipeline Integrity Platform</div>
+            <div style={styles.headerLine2}>Permian 500 Â· Pipeline Integrity Platform</div>
             <div style={styles.headerLine3}>Authorized personnel only</div>
             <div style={styles.headerDivider} />
           </div>
 
-          {/* DEMO SSO Button */}
+          {/* FAKE SSO â€” see onFakeSsoClick comment above. Not real auth. */}
           <button
             type="button"
             style={{
-              width: '100%',
+              width: "100%",
               height: 42,
-              background: '#378ADD',
-              color: '#FFFFFF',
+              background: "#378ADD",
+              color: "#FFFFFF",
               fontSize: 14,
               fontWeight: 500,
-              border: 'none',
+              border: "none",
               borderRadius: 8,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               gap: 10,
-              transition: 'background 0.15s',
+              transition: "background 0.15s",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#2E74BB';
+              (e.currentTarget as HTMLButtonElement).style.background = "#2E74BB";
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#378ADD';
+              (e.currentTarget as HTMLButtonElement).style.background = "#378ADD";
             }}
-            aria-label="Sign in with Company SSO"
-            onClick={() => {
-              onDemoSuccess();
-            }}
+            aria-label="Sign in with Company SSO (demo bypass â€” not real SSO)"
+            onClick={onFakeSsoClick}
           >
             Sign in with Company SSO
           </button>
@@ -307,9 +353,7 @@ export const SignInPage: React.FC = () => {
           {error && (
             <div style={styles.errorBox} role="alert" aria-live="polite">
               <AlertTriangle size={16} color={COLORS.errorText} style={{ flexShrink: 0, marginTop: 2 }} />
-              <div style={{ color: COLORS.errorText, fontSize: 13, lineHeight: 1.35 }}>
-                Invalid credentials. Please sign in with your company account.
-              </div>
+              <div style={{ color: COLORS.errorText, fontSize: 13, lineHeight: 1.35 }}>{errorMessage}</div>
             </div>
           )}
 
@@ -339,13 +383,13 @@ export const SignInPage: React.FC = () => {
             <div style={styles.passwordRow}>
               <input
                 style={{ ...inputBase, ...styles.passwordInput }}
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   if (error) setError(false);
                 }}
-                placeholder={'•••••••'}
+                placeholder={"â€¢â€¢â€¢â€¢â€¢â€¢â€¢"}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = COLORS.focusBorder;
                 }}
@@ -359,7 +403,7 @@ export const SignInPage: React.FC = () => {
                 type="button"
                 style={styles.eyeButton}
                 onClick={() => setShowPassword((s) => !s)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={18} color={COLORS.placeholder} /> : <Eye size={18} color={COLORS.placeholder} />}
               </button>
@@ -379,7 +423,7 @@ export const SignInPage: React.FC = () => {
               (e.currentTarget as HTMLButtonElement).style.borderColor = COLORS.border;
             }}
           >
-            {submitting ? 'Signing in…' : 'Sign in'}
+            {submitting ? "Signing inâ€¦" : "Sign in"}
           </button>
 
           <div
@@ -387,7 +431,7 @@ export const SignInPage: React.FC = () => {
             role="button"
             tabIndex={0}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLDivElement).style.color = '#9BA3B2';
+              (e.currentTarget as HTMLDivElement).style.color = "#9BA3B2";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLDivElement).style.color = COLORS.placeholder;
@@ -397,14 +441,11 @@ export const SignInPage: React.FC = () => {
           </div>
         </form>
 
-        {/* FOOTER — below card, not inside it */}
         <div style={styles.footer}>
-          © 2026 ReliabilityOS · SOC 2 Type II Certified · PHMSA Compliant · For authorized use only
+          © 2026 ReliabilityOS · For authorized use only
         </div>
       </div>
     </div>
   );
 };
-
-
 

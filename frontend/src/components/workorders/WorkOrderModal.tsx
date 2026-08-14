@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
+import type { WorkOrder } from '../../types';
 import { priorityColor, statusColor } from '../../utils/colors';
 import { X, Plus, Camera, CheckCircle, Wrench, Package } from 'lucide-react';
 
@@ -20,16 +21,47 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
     filter === 'all' ? true : wo.status === filter
   );
 
-  const handleCreate = () => {
+  // createWorkOrder is now a real async POST to the backend. If we are
+  // offline, calling it would just fail with no network -- branch before
+  // hitting the network at all, rather than after. Real offline sync
+  // (POST /api/v1/workorders/sync) is not wired from syncOfflineQueue yet;
+  // that's a separate follow-up, not part of this fix.
+  const handleCreate = async () => {
     if (!newWO.title.trim()) return;
-    const wo = createWorkOrder({
-      ...newWO,
-      asset_id: newWO.segment_id,
-      repair_procedure: '',
-      due_date: newWO.due_date || null,
-      assigned_to: newWO.assigned_to || null,
-    });
-    if (isOffline) queueOfflineWorkOrder({ ...wo, _queued: true });
+
+    if (isOffline) {
+      const now = new Date().toISOString();
+      const localWo: WorkOrder = {
+        id: `LOCAL-${Date.now()}`,
+        title: newWO.title,
+        segment_id: newWO.segment_id,
+        status: 'draft',
+        priority: newWO.priority,
+        description: newWO.description || null,
+        repair_procedure: null,
+        estimated_downtime_hours: 4,
+        assigned_to: newWO.assigned_to || null,
+        created_at: now,
+        updated_at: now,
+        due_date: newWO.due_date || null,
+        completed_at: null,
+        prediction_id: null,
+        technician_notes: null,
+        actual_root_cause: null,
+        alert_id: null,
+      };
+      queueOfflineWorkOrder(localWo);
+    } else {
+      await createWorkOrder({
+        title: newWO.title,
+        segment_id: newWO.segment_id,
+        priority: newWO.priority,
+        description: newWO.description,
+        due_date: newWO.due_date || undefined,
+        assigned_to: newWO.assigned_to || undefined,
+      });
+    }
+
     setCreating(false);
     setNewWO({ title: '', segment_id: '', priority: 'medium', description: '', assigned_to: '', due_date: '' });
   };
@@ -46,7 +78,6 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
         borderRadius: '8px', display: 'flex', flexDirection: 'column',
         overflow: 'hidden', boxShadow: 'var(--shadow-lg)',
       }}>
-        {/* Header */}
         <div style={{
           padding: '14px 18px', borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -56,7 +87,7 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
             <Wrench size={16} color="#0090FF" />
             <h2>Work Orders</h2>
             {isOffline && (
-              <span className="badge badge-offline">Offline – Changes queued</span>
+              <span className="badge badge-offline">Offline - Changes queued</span>
             )}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -67,7 +98,6 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
           </div>
         </div>
 
-        {/* Create form */}
         {creating && (
           <div className="animate-fade-in" style={{
             padding: '14px 18px', borderBottom: '1px solid var(--border)',
@@ -80,7 +110,7 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
                 <input
                   value={newWO.title}
                   onChange={e => setNewWO(p => ({ ...p, title: e.target.value }))}
-                  placeholder="e.g. External corrosion repair – Mile 205"
+                  placeholder="e.g. External corrosion repair - Mile 205"
                   style={{
                     width: '100%', padding: '8px 10px', background: '#252830',
                     border: '1px solid var(--border)', borderRadius: '4px',
@@ -95,8 +125,8 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
                   onChange={e => setNewWO(p => ({ ...p, segment_id: e.target.value }))}
                   style={{ width: '100%', padding: '8px 10px', background: '#252830', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--text-primary)', fontSize: '13px' }}
                 >
-                  <option value="">Select segment…</option>
-                  {segments.filter(s => s.health_status !== 'good').map(s => (
+                  <option value="">Select segment...</option>
+                  {segments.filter(s => s.zone !== 'good').map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
@@ -136,7 +166,7 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
                 <textarea
                   value={newWO.description}
                   onChange={e => setNewWO(p => ({ ...p, description: e.target.value }))}
-                  placeholder="Describe the work needed…"
+                  placeholder="Describe the work needed..."
                   rows={2}
                   style={{ width: '100%', padding: '8px 10px', background: '#252830', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--text-primary)', fontSize: '13px', resize: 'vertical' }}
                 />
@@ -152,7 +182,6 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
           </div>
         )}
 
-        {/* Filter tabs */}
         <div style={{
           display: 'flex', borderBottom: '1px solid var(--border)',
           flexShrink: 0, padding: '0 18px',
@@ -181,13 +210,11 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
           ))}
         </div>
 
-        {/* Work Order List */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 18px' }}>
           {filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
               <CheckCircle size={32} style={{ opacity: 0.3, marginBottom: '8px' }} />
               <div>No work orders in this category.</div>
-              <div style={{ fontSize: '11px', marginTop: '4px' }}>Next inspection due in 6 days.</div>
             </div>
           ) : (
             filtered.map(wo => (
@@ -200,9 +227,8 @@ export const WorkOrderModal: React.FC<{ onClose: () => void }> = ({ onClose }) =
   );
 };
 
-// ─── WO Row ───────────────────────────────────────────────────────────────────
 const WORow: React.FC<{
-  wo: ReturnType<typeof useStore.getState>['workOrders'][0];
+  wo: WorkOrder;
   onStatusChange: (s: 'draft' | 'pending' | 'in_progress' | 'completed' | 'cancelled') => void;
 }> = ({ wo, onStatusChange }) => {
   const [expanded, setExpanded] = useState(false);
@@ -216,7 +242,6 @@ const WORow: React.FC<{
       borderRadius: '6px', marginBottom: '8px',
       overflow: 'hidden',
     }}>
-      {/* Summary row */}
       <button
         onClick={() => setExpanded(!expanded)}
         style={{
@@ -225,10 +250,8 @@ const WORow: React.FC<{
           alignItems: 'center', gap: '12px', textAlign: 'left',
         }}
       >
-        {/* Priority dot */}
         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: pColor, flexShrink: 0 }} />
 
-        {/* ID + Title */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)' }}>{wo.id}</span>
@@ -239,7 +262,6 @@ const WORow: React.FC<{
           </div>
         </div>
 
-        {/* Meta */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 }}>
           <span style={{ background: `${sColor}25`, color: sColor, padding: '2px 7px', borderRadius: '3px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' as const }}>
             {wo.status.replace(/_/g, ' ')}
@@ -250,25 +272,24 @@ const WORow: React.FC<{
         </div>
       </button>
 
-      {/* Expanded detail */}
       {expanded && (
         <div className="animate-fade-in" style={{ padding: '0 14px 14px' }}>
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px', lineHeight: 1.6 }}>
               {wo.description}
             </p>
-            {wo.parts_list.length > 0 && (
+            {(wo.parts_list ?? []).length > 0 && (
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
                   <Package size={12} /> PARTS LIST
                 </div>
-                {wo.parts_list.map(p => (
+                {(wo.parts_list ?? []).map(p => (
                   <div key={p.part_number} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '2px' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>{p.description}</span>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>×{p.quantity}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>x{p.quantity}</span>
                       <span style={{ color: p.in_stock ? '#30A46C' : '#E5484D', fontSize: '10px' }}>
-                        {p.in_stock ? '✓ In stock' : '✗ Order req.'}
+                        {p.in_stock ? 'In stock' : 'Order req.'}
                       </span>
                     </div>
                   </div>

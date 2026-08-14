@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
+import type { WorkOrder } from '../../types';
 import { healthColor } from '../../utils/colors';
-import { fmt } from '../../utils/formatting';
 import { PredictionCard } from '../predictions/PredictionCard';
 import { SensorSparkline } from './SensorSparklines';
 import { X, ChevronLeft, AlertTriangle, Thermometer, Activity, Clock } from 'lucide-react';
@@ -34,28 +34,57 @@ export const DetailDrawer: React.FC = () => {
     );
   }
 
-  const color = healthColor(segment.health_score);
+  // health_score is nullable (no open-alert history yet) -- healthColor
+  // needs a number, so default the color calc to 100 (healthiest) rather
+  // than showing a false "0/critical" color for an asset that just has no
+  // data yet. The displayed number still shows the real null as "-".
+  const color = healthColor(segment.health_score ?? 100);
 
-  const handleCreateWO = () => {
-    const wo = createWorkOrder({
-      title: `Inspection: ${segment.name}`,
-      segment_id: segment.id,
-      asset_id: segment.id,
-      priority: prediction?.severity as 'critical' | 'high' | 'medium' | 'low' ?? 'medium',
-      description: prediction
-        ? `AI-predicted ${prediction.primary_failure_mode}. RUL: ${prediction.rul_days}d. Confidence: ${Math.round(prediction.confidence * 100)}%.`
-        : `Routine inspection of ${segment.name}.`,
-      prediction_id: prediction?.id ?? null,
-    });
+  // createWorkOrder is now a real async POST. If offline, calling it would
+  // just fail with no network -- branch before hitting the network, same
+  // pattern as WorkOrderModal.tsx. Real offline sync isn't wired yet
+  // (separate follow-up).
+  const handleCreateWO = async () => {
+    const description = prediction
+      ? `AI-predicted ${prediction.primary_failure_mode ?? prediction.failure_mode ?? 'anomaly'}. RUL: ${prediction.rul_days ?? '?'}d. Confidence: ${prediction.confidence != null ? Math.round(prediction.confidence * 100) + '%' : 'n/a'}.`
+      : `Routine inspection of ${segment.name}.`;
+
     if (isOffline) {
-      queueOfflineWorkOrder({ ...wo, _queued: true });
+      const now = new Date().toISOString();
+      const localWo: WorkOrder = {
+        id: `LOCAL-${Date.now()}`,
+        title: `Inspection: ${segment.name}`,
+        segment_id: segment.id,
+        status: 'draft',
+        priority: (prediction?.severity as 'critical' | 'high' | 'medium' | 'low') ?? 'medium',
+        description,
+        repair_procedure: null,
+        estimated_downtime_hours: 4,
+        assigned_to: null,
+        created_at: now,
+        updated_at: now,
+        due_date: null,
+        completed_at: null,
+        prediction_id: prediction?.id ?? null,
+        technician_notes: null,
+        actual_root_cause: null,
+        alert_id: null,
+      };
+      queueOfflineWorkOrder(localWo);
+    } else {
+      await createWorkOrder({
+        title: `Inspection: ${segment.name}`,
+        segment_id: segment.id,
+        priority: (prediction?.severity as 'critical' | 'high' | 'medium' | 'low') ?? 'medium',
+        description,
+        prediction_id: prediction?.id ?? undefined,
+      });
     }
     setTab('workorders');
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* ── Drawer Header ─────────────────────────────────────────────────── */}
       <div style={{
         padding: '10px 12px',
         borderBottom: '1px solid var(--border)',
@@ -68,7 +97,7 @@ export const DetailDrawer: React.FC = () => {
               {segment.name}
             </div>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '1px' }}>
-              {segment.diameter_inches}" · {segment.material} · Installed {segment.installation_year}
+              {segment.platform}{segment.line ? ` - ${segment.line}` : ''}
             </div>
           </div>
           <button className="btn btn-icon" onClick={() => selectSegment(null)}>
@@ -76,24 +105,28 @@ export const DetailDrawer: React.FC = () => {
           </button>
         </div>
 
-        {/* Health bar */}
         <div style={{ marginTop: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Health Score</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color }}>
-              {segment.health_score}%
+              {segment.health_score ?? '-'}%
             </span>
           </div>
           <div style={{ height: '5px', background: '#2D2D2D', borderRadius: '3px', overflow: 'hidden' }}>
             <div style={{
-              height: '100%', width: `${segment.health_score}%`,
+              height: '100%', width: `${segment.health_score ?? 0}%`,
               background: color, borderRadius: '3px', transition: 'width 0.4s ease',
             }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Zone (seeded label)</span>
+            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'capitalize' as const }}>
+              {segment.zone ?? '-'}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* ── Tabs ──────────────────────────────────────────────────────────── */}
       <div style={{
         display: 'flex', borderBottom: '1px solid var(--border)',
         flexShrink: 0, background: '#1A1C23',
@@ -117,18 +150,19 @@ export const DetailDrawer: React.FC = () => {
         ))}
       </div>
 
-      {/* ── Tab Content ───────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
-        {/* Overview Tab */}
         {tab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {/* Quick Stats */}
+            {/* Physical pipe specs (wall thickness, pressure, diameter,
+                material, install year) are NOT in the real schema -- shown
+                as "-" rather than fabricated. Will populate once real
+                vendor/pipeline spec data exists. */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
               {[
-                { icon: <Thermometer size={12} />, label: 'Wall Thick.', value: `${segment.wall_thickness_mm} mm`, color: segment.wall_thickness_mm < 10 ? '#E5484D' : '#E8ECEF' },
-                { icon: <Activity size={12} />, label: 'Pressure', value: `${segment.operating_pressure_psi} PSI`, color: '#E8ECEF' },
-                { icon: <Clock size={12} />, label: 'Last PIG', value: segment.last_pig_run ?? 'None', color: '#9E9E9E' },
-                { icon: <Clock size={12} />, label: 'Next PIG', value: segment.next_pig_due ?? 'N/A', color: '#9E9E9E' },
+                { icon: <Thermometer size={12} />, label: 'Wall Thick.', value: '-', color: '#E8ECEF' },
+                { icon: <Activity size={12} />, label: 'Pressure', value: '-', color: '#E8ECEF' },
+                { icon: <Clock size={12} />, label: 'Last PIG', value: 'None', color: '#9E9E9E' },
+                { icon: <Clock size={12} />, label: 'Next PIG', value: 'N/A', color: '#9E9E9E' },
               ].map(({ icon, label, value, color: vc }) => (
                 <div key={label} style={{
                   background: '#1A1C23', border: '1px solid var(--border)',
@@ -145,7 +179,6 @@ export const DetailDrawer: React.FC = () => {
               ))}
             </div>
 
-            {/* Prediction Card */}
             {prediction ? (
               <PredictionCard prediction={prediction} onCreateWorkOrder={handleCreateWO} />
             ) : (
@@ -155,18 +188,16 @@ export const DetailDrawer: React.FC = () => {
                 textAlign: 'center',
               }}>
                 <div style={{ color: '#30A46C', fontWeight: 600, fontSize: '12px', marginBottom: '4px' }}>
-                  ✓ No anomalies detected
+                  No anomalies detected
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  All sensor readings within normal parameters.
-                  {segment.next_pig_due && ` Next inspection due ${fmt(segment.next_pig_due, 'dd MMM yyyy')}.`}
+                  No AI prediction on record for this segment. The prediction model service is not yet built -- see /api/v1/predictions.
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Sensors Tab */}
         {tab === 'sensors' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {sensors.length > 0 ? (
@@ -179,7 +210,6 @@ export const DetailDrawer: React.FC = () => {
           </div>
         )}
 
-        {/* Work Orders Tab */}
         {tab === 'workorders' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <button className="btn btn-primary" onClick={handleCreateWO} style={{ width: '100%', fontSize: '12px', marginBottom: '4px' }}>
@@ -208,11 +238,11 @@ export const DetailDrawer: React.FC = () => {
                     {wo.title}
                   </div>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                    {wo.assigned_to ?? 'Unassigned'} · Due: {wo.due_date ?? 'N/A'}
+                    {wo.assigned_to ?? 'Unassigned'} - Due: {wo.due_date ?? 'N/A'}
                   </div>
                   {wo._queued && (
                     <div style={{ marginTop: '4px', fontSize: '10px', color: '#FFDC00' }}>
-                      ⏱ Queued – will sync when online
+                      Queued - will sync when online
                     </div>
                   )}
                 </div>
@@ -220,10 +250,7 @@ export const DetailDrawer: React.FC = () => {
             ) : (
               <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '24px', fontSize: '12px' }}>
                 <AlertTriangle size={20} style={{ opacity: 0.3, marginBottom: '8px' }} />
-                <div>No active prescriptions.</div>
-                <div style={{ fontSize: '11px', marginTop: '4px' }}>
-                  {segment.next_pig_due && `Next inspection due ${fmt(segment.next_pig_due, 'dd MMM yyyy')}.`}
-                </div>
+                <div>No work orders yet for this segment.</div>
               </div>
             )}
           </div>
@@ -232,3 +259,4 @@ export const DetailDrawer: React.FC = () => {
     </div>
   );
 };
+
