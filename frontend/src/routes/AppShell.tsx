@@ -14,7 +14,7 @@ import { connectSocket, disconnectSocket } from '../services/socket';
 
 import { useNavigate } from 'react-router-dom';
 import { clearRosSession } from '../auth/rosSession';
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 
 const WorkOrderModal = lazy(() => import('../components/workorders/WorkOrderModal').then(m => ({ default: m.WorkOrderModal })));
 const ROIModal = lazy(() => import('../components/roi/ROIModal').then(m => ({ default: m.ROIModal })));
@@ -40,6 +40,7 @@ export const AppShell: React.FC = () => {
     applyStateInit, mergeActiveAlerts, mergeWorkOrderCreated, mergeAlertAcknowledged,
   } = useStore();
   const hasUnacknowledgedLeak = alerts.some(a => a.type === 'leak' && !a.acknowledged);
+  const [socketError, setSocketError] = useState<string | null>(null);
 
   // Real-time Socket.IO connection. Read-only by design -- see
   // services/socket.ts JSDoc: work order creation and alert acknowledgment
@@ -48,11 +49,11 @@ export const AppShell: React.FC = () => {
   // only ever registers *incoming* handlers, never emits a write.
   useEffect(() => {
     connectSocket({
-      onStateInit: (payload) => applyStateInit(payload),
+      onStateInit: (payload) => { applyStateInit(payload); setSocketError(null); },
       onActiveAlerts: (alerts) => mergeActiveAlerts(alerts),
       onWorkOrderCreated: (wo) => mergeWorkOrderCreated(wo),
       onAlertAcknowledged: (alert) => mergeAlertAcknowledged(alert),
-      onConnectError: (message) => console.error('[socket] connect error:', message),
+      onConnectError: (message) => { console.error('[socket] connect error:', message); setSocketError(message); },
     });
 
     return () => {
@@ -92,6 +93,11 @@ export const AppShell: React.FC = () => {
 
 
       <OfflineBanner />
+      {socketError && (
+        <div style={{ height: 32, background: 'rgba(240,106,80,0.12)', borderBottom: '1px solid rgba(240,106,80,0.3)', display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px', flexShrink: 0, fontSize: 12, color: '#F06A50' }}>
+          Real-time connection lost — retrying in background. Data may be stale.
+        </div>
+      )}
 
       <div className="app-panels">
         <div className="panel-map">
