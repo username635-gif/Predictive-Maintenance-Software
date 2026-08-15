@@ -122,7 +122,10 @@ const RegisteredGatewaysList: React.FC<Props> = ({ onEditGateway }) => {
               <div style={{ padding: '14px 12px', color: '#9BA3B2', fontSize: 12 }}>Loading…</div>
             )}
 
-            {!loadError && gateways && (
+            {!loadError && gateways && gateways.length === 0 && (
+              <div style={{ padding: '14px 12px', color: '#9BA3B2', fontSize: 12 }}>No gateways registered yet.</div>
+            )}
+            {!loadError && gateways && gateways.length > 0 && (
               <div>
                 {sorted.map((g) => (
                   <button
