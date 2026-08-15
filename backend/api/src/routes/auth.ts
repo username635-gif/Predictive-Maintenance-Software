@@ -1,4 +1,4 @@
-﻿import { Router, Request, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
@@ -51,7 +51,7 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
   const token = jwt.sign(
     { id: user.id, email: user.email, name: user.name, role: user.role },
     getJwtSecret(),
-    { expiresIn: '12h' },
+    { expiresIn: '7d' },
   );
   res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
 });
