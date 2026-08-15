@@ -10,7 +10,7 @@ import type {
   SocketWorkOrderRow, SocketPredictionRow
 } from '../services/socket';
 import { format } from 'date-fns';
-import { api, ApiError } from '../services/api';
+import { api } from '../services/api';
 
 function toNumberOrNull(v: unknown): number | null {
   if (v === null || v === undefined) return null;
@@ -303,7 +303,6 @@ interface AppState {
   replaceGatewayList: (gateways: GatewayConfig[]) => void;
   upsertGateway: (gateway: GatewayConfig) => void;
 
-  loadInitialData: () => Promise<void>;
   acknowledgeAlert: (id: string) => Promise<void>;
   createWorkOrder: (payload: Partial<WorkOrder> & { alert_id?: string }) => Promise<WorkOrder>;
   updateWorkOrder: (id: string, updates: Partial<WorkOrder>) => Promise<void>;
@@ -406,30 +405,6 @@ export const useStore = create<AppState>((set, get) => ({
       gatewayList: [...s.gatewayList.filter(item => item.id !== gateway.id), gateway].sort((a, b) => a.name.localeCompare(b.name)),
     })),
 
-  loadInitialData: async () => {
-    set({ dataLoading: true, dataError: null });
-    try {
-      const [assetsRes, alertsRes, workOrdersRes, predictionsRes, sensorsRes] = await Promise.all([
-        api.getAssets(),
-        api.getAlerts(),
-        api.getWorkOrders(),
-        api.getPredictions(),
-        api.getSensors(),
-      ]);
-      set({
-        segments: (assetsRes.assets as any[]).map(adaptAsset),
-        alerts: (alertsRes.alerts as any[]).map(adaptAlert),
-        workOrders: (workOrdersRes.work_orders as any[]).map(adaptWorkOrder),
-        predictions: (predictionsRes.predictions as any[]).map(adaptPrediction),
-        sensors: (sensorsRes.sensors as any[]).map(adaptSensor),
-        dataLoading: false,
-      });
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Failed to load data from server.';
-      set({ dataLoading: false, dataError: message });
-      console.error('[useStore] loadInitialData failed:', err);
-    }
-  },
 
   acknowledgeAlert: async (id) => {
     const res = await api.acknowledgeAlert(id);
