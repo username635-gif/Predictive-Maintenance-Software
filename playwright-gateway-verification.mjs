@@ -103,15 +103,6 @@ async function main() {
     await page.locator('button[title*="edge gateways online"]').click();
     await page.waitForSelector('h2:has-text("Edge Gateways")', { timeout: 15000 });
     console.log('PASS - Gateways modal opened');
-    // Ensure the Registered Gateways section is expanded (click the header if present)
-    try {
-      const regHeader = page.getByText('Registered Gateways');
-      if (await regHeader.count() > 0) {
-        await regHeader.first().click().catch(() => {});
-      }
-    } catch (e) {
-      // ignore
-    }
 
     console.log('=== c. Open create modal and fill form ===');
     await page.getByRole('button', { name: /\+ Register New Gateway/i }).click();
@@ -139,6 +130,7 @@ async function main() {
     try {
       await page.waitForSelector(selectorText, { timeout: 8000 });
       appeared = true;
+      var row = page.locator(selectorText).first();
     } catch (e) {
       appeared = false;
     }
@@ -152,6 +144,13 @@ async function main() {
       try {
         const count = await page.locator(`text=${TEST_GATEWAY_NAME}`).count().catch(() => 0);
         console.log('--- DIAGNOSTIC: locator count ---', count);
+      try {
+        const modalHtml = await page.evaluate(() => { const el = document.querySelector('.animate-fade-in'); return el ? el.outerHTML : 'NO .animate-fade-in FOUND'; });
+        console.log('--- DIAGNOSTIC: modal outerHTML ---');
+        console.log(modalHtml.slice(0, 8000));
+      } catch (e) {
+        console.log('--- DIAGNOSTIC: failed modal html ---', e && e.message ? e.message : String(e));
+      }
       } catch (e) {
         console.log('--- DIAGNOSTIC: failed to count locator ---', e && e.message ? e.message : String(e));
       }

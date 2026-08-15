@@ -17,3 +17,4 @@ __pycache__/
 .vercel/
 *.pyc
 refresh-mechanism-diff*.txt
+run*.txt
