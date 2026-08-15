@@ -1,4 +1,4 @@
-﻿import { apiBaseUrl } from '../utils/apiBase';
+import { apiBaseUrl } from '../utils/apiBase';
 import { getAuthToken, clearRosSession } from '../auth/rosSession';
 
 export class ApiError extends Error {
@@ -21,6 +21,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (res.status === 401) {
     clearRosSession();
+    window.dispatchEvent(new CustomEvent('auth-session-expired'));
     throw new ApiError(401, 'Session expired -- please sign in again.');
   }
 

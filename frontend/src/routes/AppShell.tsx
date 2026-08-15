@@ -61,6 +61,17 @@ export const AppShell: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const onSessionExpired = () => {
+      disconnectSocket();
+      navigate('/login', { replace: true });
+    };
+    window.addEventListener('auth-session-expired' as any, onSessionExpired);
+    return () => {
+      window.removeEventListener('auth-session-expired' as any, onSessionExpired);
+    };
+  }, [navigate]);
+
   const onSignOut = () => {
     disconnectSocket();
     clearRosSession();
