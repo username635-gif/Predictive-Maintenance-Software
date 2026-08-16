@@ -18,6 +18,7 @@ import pigRouter from './routes/pig';
 import auditRouter from './routes/audit';
 import gatewaysRouter from './routes/gateways';
 import assetsRouter from './routes/assets';
+import importRouter from './routes/import';
 import { errorHandler } from './middleware/errorHandler';
 import { requireAuth, requireRole } from './middleware/authMiddleware';
 import { getPgPool } from './db/pg';
@@ -215,6 +216,7 @@ app.use('/api/v1/pig', requireAuth, pigRouter);
 app.use('/api/v1/gateways', requireAuth, gatewaysRouter);
 app.use('/api/v1/audit', requireAuth, auditRouter);
 app.use('/api/v1/assets', requireAuth, assetsRouter);
+app.use('/api/v1/import', requireAuth, requireRole('admin'), importRouter);
 
 // ───────────────────────────── Error Handler ─────────────────────────────────
 app.use(errorHandler);
