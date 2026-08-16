@@ -1,5 +1,6 @@
-﻿import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Sensor } from '../../types';
+import { api } from '../../services/api';
 import { sensorTypeLabel } from '../../utils/formatting';
 
 interface SparklineProps {
@@ -15,6 +16,14 @@ interface SparklineProps {
 // exists server-side but isn't wired here yet) -- a real gap, not faked
 // with a flat line.
 export const SensorSparkline: React.FC<SparklineProps> = ({ sensor }) => {
+  const [history, setHistory] = useState<{ reading_at: string; value: number }[] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.getSensorHistory(sensor.id, 24)
+      .then((res) => { if (!cancelled) setHistory(res.readings); })
+      .catch(() => { if (!cancelled) setHistory([]); });
+    return () => { cancelled = true; };
+  }, [sensor.id]);
   const rangeMin = sensor.manual_override_min ?? sensor.hard_min;
   const rangeMax = sensor.manual_override_max ?? sensor.hard_max;
 
@@ -58,15 +67,28 @@ export const SensorSparkline: React.FC<SparklineProps> = ({ sensor }) => {
           </div>
         </div>
       </div>
-
-      {/* Sparkline removed -- no real per-sensor history reaches the
-          frontend yet (see comment above). */}
-      <div style={{
-        height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '10px', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: '4px',
-      }}>
-        History not yet available
-      </div>
+      {history === null ? (
+        <div style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'var(--text-muted)' }}>Loading...</div>
+      ) : history.length === 0 ? (
+        <div style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: '4px' }}>No history yet</div>
+      ) : (
+        <svg viewBox='0 0 200 36' style={{ width: '100%', height: '36px' }} preserveAspectRatio='none'>
+          <polyline
+            fill='none'
+            stroke={color}
+            strokeWidth='1.5'
+            points={history.map((r, i) => {
+              const vals = history.map(h => h.value);
+              const min = Math.min(...vals);
+              const max = Math.max(...vals);
+              const range = max - min || 1;
+              const x = (i / Math.max(history.length - 1, 1)) * 200;
+              const y = 34 - ((r.value - min) / range) * 32;
+              return x + "," + y;
+            }).join(' ')}
+          />
+        </svg>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
         <span style={{ fontSize: '9px', color: '#3A3D48' }}>

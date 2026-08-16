@@ -56,6 +56,24 @@ router.get('/:id', async (req: Request, res: Response) => {
   res.json({ ...rows[0], ...liveStatus(rows[0].id) });
 });
 
+// GET /api/v1/sensors/:id/history?hours=24 -- time-series readings for sparklines
+router.get('/:id/history', async (req: Request, res: Response) => {
+  const pool = getPgPoolOrThrow();
+  const hours = Math.min(Math.max(parseInt(String(req.query.hours ?? '24'), 10) || 24, 1), 720);
+  const sensorCheck = await pool.query('SELECT id FROM sensors WHERE id = $1', [req.params.id]);
+  if (sensorCheck.rows.length === 0) {
+    res.status(404).json({ error: 'Sensor not found', id: req.params.id });
+    return;
+  }
+  const { rows } = await pool.query(
+    `SELECT reading_at, value, is_flagged_bad FROM sensor_readings
+     WHERE sensor_id = $1 AND reading_at >= now() - ($2 || ' hours')::interval
+     ORDER BY reading_at ASC`,
+    [req.params.id, hours],
+  );
+  res.json({ sensor_id: req.params.id, hours, count: rows.length, readings: rows });
+});
+
 // GET /api/v1/sensors/health/summary
 router.get('/health/summary', async (_req: Request, res: Response) => {
   const pool = getPgPoolOrThrow();

@@ -58,6 +58,7 @@ export const api = {
     }),
   getPredictions: () => request<{ predictions: unknown[]; note?: string }>('/api/v1/predictions'),
   getSensors: () => request<{ count: number; sensors: unknown[] }>('/api/v1/sensors'),
+  getSensorHistory: (id: string, hours = 24) => request<{ sensor_id: string; hours: number; count: number; readings: { reading_at: string; value: number; is_flagged_bad: boolean }[] }>(`/api/v1/sensors/${id}/history?hours=${hours}`),
   getPigRuns: () => request<{ pig_runs: unknown[] }>('/api/v1/pig'),
   getGateways: () => request<{ gateways: unknown[] }>('/api/v1/gateways'),
   getGatewayStatus: () => request<{ protocols: unknown[] }>('/api/v1/gateways/status'),
