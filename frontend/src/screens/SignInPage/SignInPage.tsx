@@ -1,6 +1,6 @@
-﻿import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { setRosSession, RosUser } from "../../auth/rosSession";
+import { setRosSession } from "../../auth/rosSession";
 import { apiBaseUrl } from "../../utils/apiBase";
 import { AlertTriangle, Eye, EyeOff } from "lucide-react";
 
@@ -45,33 +45,6 @@ export const SignInPage: React.FC = () => {
       boxShadow: "none",
     } as const;
   }, []);
-
-  // FAKE SSO â€” no real SSO integration exists. This button skips the backend
-  // entirely and fabricates a session so the UI keeps working tonight.
-  // Deliberately left in per a working decision on 2026-08-11 to repurpose
-  // it later rather than remove it now. DO NOT deploy or demo this to
-  // anyone but the developer while this bypass is in place â€” it grants
-  // "engineer" access to anyone who clicks it, no credentials required.
-  const onFakeSsoClick = () => {
-    console.warn(
-      "[SignInPage] FAKE SSO login used â€” this bypasses real auth entirely and is not safe for deploy/demo."
-    );
-    const fakeUser: RosUser = {
-      id: "demo-sso-user",
-      email: "demo@company.com",
-      name: "Demo Engineer",
-      role: "technician",
-    };
-    // exp far in the future so the client-side expiry check in rosSession
-    // doesn't immediately clear this fake session.
-    const fakeToken =
-      "fake." +
-      btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60 })) +
-      ".fake";
-    setRosSession({ token: fakeToken, user: fakeUser });
-    navigate("/map", { replace: true });
-  };
-
   const onSubmitEmailPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
@@ -312,37 +285,6 @@ export const SignInPage: React.FC = () => {
             <div style={styles.headerLine3}>Authorized personnel only</div>
             <div style={styles.headerDivider} />
           </div>
-
-          {/* FAKE SSO â€” see onFakeSsoClick comment above. Not real auth. */}
-          <button
-            type="button"
-            style={{
-              width: "100%",
-              height: 42,
-              background: "#378ADD",
-              color: "#FFFFFF",
-              fontSize: 14,
-              fontWeight: 500,
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              transition: "background 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "#2E74BB";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "#378ADD";
-            }}
-            aria-label="Sign in with Company SSO (demo bypass â€” not real SSO)"
-            onClick={onFakeSsoClick}
-          >
-            Sign in with Company SSO
-          </button>
 
           <div style={styles.dividerWrap}>
             <div style={styles.dividerLine} />
