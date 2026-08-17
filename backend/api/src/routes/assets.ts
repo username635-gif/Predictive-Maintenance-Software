@@ -37,6 +37,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     health_score: health.healthScore,
     health_score_open_alerts: health.openAlertCount,
     health_score_breakdown: health.breakdown,
+    health_score_factors: health.factors,
   });
 });
 
