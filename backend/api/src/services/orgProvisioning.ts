@@ -13,6 +13,7 @@ const ORG_MIGRATION_FILES = [
   "005_route_and_fk_integrity.sql",
   "006_asset_pipe_specs.sql",
   "007_asset_incidents.sql",
+  "009_user_provisioning.sql",
 ];
 
 // ASSUMPTION, not yet verified live: this resolves relative to
@@ -117,4 +118,5 @@ export async function provisionOrganization(controlPool: Pool, orgName: string):
 
   return { organizationId: rows[0].id, name: orgName, dbName };
 }
+
 
