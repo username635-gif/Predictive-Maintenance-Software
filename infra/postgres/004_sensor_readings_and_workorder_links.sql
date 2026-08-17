@@ -1,13 +1,11 @@
-﻿-- Sensor reading history: previously only held in memory (server.ts's
+-- Sensor reading history: previously only held in memory (server.ts's
 -- recentValues Map), reset on every restart. This is what makes trend
--- projection possible — it can't project from data that doesn't persist.
-CREATE TABLE IF NOT EXISTS sensor_readings (
-    id          BIGSERIAL PRIMARY KEY,
-    sensor_id   TEXT NOT NULL REFERENCES sensors(id) ON DELETE CASCADE,
-    value       NUMERIC NOT NULL,
-    recorded_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS idx_sensor_readings_sensor_time ON sensor_readings(sensor_id, recorded_at DESC);
+-- projection possible ? it can't project from data that doesn't persist.
+-- sensor_readings already created in 002_alerts_assets_sensors.sql (with
+-- column reading_at, not recorded_at). This block was dead/broken -- its
+-- CREATE TABLE silently no-op'd against the existing table, and its index
+-- referenced a column that never existed. Removed rather than fixed in
+-- place, since 002 already has the correct table and index.
 
 -- Links a work order back to the alert that generated it, so priority can
 -- be derived from real alert data instead of a manually typed guess.

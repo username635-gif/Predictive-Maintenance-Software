@@ -19,6 +19,7 @@ import auditRouter from './routes/audit';
 import gatewaysRouter from './routes/gateways';
 import assetsRouter from './routes/assets';
 import importRouter from './routes/import';
+import orgsRouter from './routes/orgs';
 import { errorHandler } from './middleware/errorHandler';
 import { requireAuth, requireRole } from './middleware/authMiddleware';
 import { getPgPool } from './db/pg';
@@ -202,6 +203,10 @@ app.get('/health', (_req, res) => {
 // on the routes inside it that need it (e.g. POST /users).
 app.use('/api/v1/auth', authRouter);
 
+// Platform-level org provisioning -- self-gated via requirePlatformAdmin inside orgs.ts,
+// deliberately not behind requireAuth (no org/user exists yet when this is called).
+app.use('/api/v1/orgs', orgsRouter);
+
 // Every route below was previously mounted with ZERO auth enforcement.
 // requireAuth is now applied at the mount point for all of them.
 // roi.ts additionally requires admin/manager — CONFIRM this matches your
@@ -236,3 +241,4 @@ httpServer.listen(PORT, () => {
 });
 
 export { app, io };
+
