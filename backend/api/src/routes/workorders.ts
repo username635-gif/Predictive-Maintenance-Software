@@ -1,6 +1,5 @@
-﻿import { Router, Request, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import Joi from 'joi';
-import { getPgPoolOrThrow } from '../db/pg';
 import { auditLog } from '../middleware/auditLog';
 
 const router = Router();
@@ -36,7 +35,7 @@ const TIER_TO_PRIORITY: Record<string, 'low' | 'medium' | 'high' | 'critical'> =
 
 // GET /api/v1/workorders
 router.get('/', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const { status, priority, segment_id } = req.query;
 
   let query = 'SELECT * FROM work_orders WHERE 1=1';
@@ -68,7 +67,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 // GET /api/v1/workorders/:id
 router.get('/:id', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const { rows } = await pool.query('SELECT * FROM work_orders WHERE id = $1', [req.params.id]);
   if (rows.length === 0) {
     res.status(404).json({ error: 'Work order not found' });
@@ -94,7 +93,7 @@ router.post(
       return;
     }
 
-    const pool = getPgPoolOrThrow();
+    const pool = req.orgPool!;
 
     let priority = value.priority as string | undefined;
     let priorityNote: string | undefined;
@@ -150,7 +149,7 @@ router.patch(
     entityType: 'workorder',
     entityId: (req) => req.params.id,
     previousState: async (req) => {
-      const pool = getPgPoolOrThrow();
+      const pool = req.orgPool!;
       const { rows } = await pool.query('SELECT * FROM work_orders WHERE id = $1', [req.params.id]);
       return rows[0] ?? null;
     },
@@ -175,7 +174,7 @@ router.patch(
     }
 
     values.push(req.params.id);
-    const pool = getPgPoolOrThrow();
+    const pool = req.orgPool!;
     const { rows } = await pool.query(
       `UPDATE work_orders SET ${setClauses.join(', ')}, updated_at = now() WHERE id = $${i} RETURNING *`,
       values,
@@ -197,7 +196,7 @@ router.post('/sync', async (req: Request, res: Response) => {
     return;
   }
 
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const results: { local_id: unknown; server_id?: string; status: string }[] = [];
 
   for (const item of items) {

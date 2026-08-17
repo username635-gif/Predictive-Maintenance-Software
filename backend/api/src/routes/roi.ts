@@ -1,11 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { getPgPoolOrThrow } from '../db/pg';
 
 const router = Router();
 
 // GET /api/v1/roi/summary
-router.get('/summary', async (_req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+router.get('/summary', async (req: Request, res: Response) => {
+  const pool = req.orgPool!;
 
   const coverage = await pool.query<{ total: string; with_cost: string }>(
     `SELECT COUNT(*) AS total,
@@ -36,8 +35,8 @@ router.get('/summary', async (_req: Request, res: Response) => {
 });
 
 // GET /api/v1/roi/history — monthly rollup of resolved alerts' cost_avoided_estimate
-router.get('/history', async (_req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+router.get('/history', async (req: Request, res: Response) => {
+  const pool = req.orgPool!;
   const { rows } = await pool.query(
     `SELECT to_char(date_trunc('month', resolved_at), 'Mon YYYY') AS month,
             COUNT(*) AS resolved_count,

@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { getPgPoolOrThrow } from '../db/pg';
 import { computeHealthScore, computeAllHealthScores } from '../services/healthScore';
 
 const router = Router();
@@ -7,7 +6,7 @@ const router = Router();
 // GET /api/v1/assets — list, each with route (jsonb, may be null) and a live-computed health_score
 // health_score is a heuristic estimate derived from current open alerts, not a validated prediction.
 router.get('/', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const { rows } = await pool.query(`SELECT * FROM assets ORDER BY id`);
   const healthScores = await computeAllHealthScores(pool);
 
@@ -25,7 +24,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 // GET /api/v1/assets/:id — single asset with full health_score breakdown
 router.get('/:id', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const { rows } = await pool.query(`SELECT * FROM assets WHERE id = $1`, [req.params.id]);
   if (rows.length === 0) {
     res.status(404).json({ error: 'Asset not found', id: req.params.id });

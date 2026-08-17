@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { getPgPoolOrThrow } from '../db/pg';
 import { auditLog } from '../middleware/auditLog';
 import { requireRole } from '../middleware/authMiddleware';
 import { recordIgnoredAndMaybeEscalate } from '../services/alertEngine';
@@ -7,8 +6,8 @@ import { recordIgnoredAndMaybeEscalate } from '../services/alertEngine';
 const router = Router();
 
 // GET /api/v1/alerts — real query, replaces mockDatabase.getAlerts()
-router.get('/', async (_req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+router.get('/', async (req: Request, res: Response) => {
+  const pool = req.orgPool!;
   const { rows } = await pool.query(
     `SELECT a.*, ast.name AS asset_name, ast.platform, ast.line, ast.zone
      FROM alerts a
@@ -19,8 +18,8 @@ router.get('/', async (_req: Request, res: Response) => {
 });
 
 // GET /api/v1/alerts/active — open/acknowledged/escalated only
-router.get('/active', async (_req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+router.get('/active', async (req: Request, res: Response) => {
+  const pool = req.orgPool!;
   const { rows } = await pool.query(
     `SELECT a.*, ast.name AS asset_name, ast.platform, ast.line, ast.zone
      FROM alerts a
@@ -36,7 +35,7 @@ router.get('/active', async (_req: Request, res: Response) => {
 // GET /api/v1/alerts/bad-actors — ranked worst-performing assets.
 // admin/manager only, same tier as roi.ts/export.
 router.get('/bad-actors', requireRole('admin', 'manager'), async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const limit = Math.min(Number(req.query.limit) || 20, 100);
 
   const { rows } = await pool.query(
@@ -71,14 +70,14 @@ router.post(
     entityType: 'alert',
     entityId: (req) => req.params.id,
     previousState: async (req) => {
-      const pool = getPgPoolOrThrow();
+      const pool = req.orgPool!;
       const { rows } = await pool.query(`SELECT * FROM alerts WHERE id = $1`, [req.params.id]);
       return rows[0] ?? null;
     },
     newState: (_req, result) => result,
   }),
   async (req: Request, res: Response) => {
-    const pool = getPgPoolOrThrow();
+    const pool = req.orgPool!;
     const { rows } = await pool.query(
       `UPDATE alerts SET status = 'acknowledged', updated_at = now()
        WHERE id = $1 AND status IN ('open','escalated')
@@ -95,7 +94,7 @@ router.post(
 
 // GET /api/v1/alerts/export — audit-trail CSV export. admin/manager only.
 router.get('/export', requireRole('admin', 'manager'), async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
 
   const conditions: string[] = [];
   const params: unknown[] = [];
@@ -162,7 +161,7 @@ router.get('/export', requireRole('admin', 'manager'), async (req: Request, res:
 
 // POST /api/v1/alerts/:id/ignore — Problem 2: never mutes, escalates after threshold
 router.post('/:id/ignore', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const escalationTarget = req.body?.escalation_target ?? 'shift-supervisor';
   const check = await pool.query(`SELECT id FROM alerts WHERE id = $1`, [req.params.id]);
   if (check.rows.length === 0) {
@@ -175,7 +174,7 @@ router.post('/:id/ignore', async (req: Request, res: Response) => {
 
 // POST /api/v1/alerts/:id/deliveries/:deliveryId/ack — Problem 2: "Reply ACK" receipt
 router.post('/:id/deliveries/:deliveryId/ack', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const { rows } = await pool.query(
     `UPDATE alert_deliveries SET acknowledged_at = now()
      WHERE id = $1 AND alert_id = $2 RETURNING *`,

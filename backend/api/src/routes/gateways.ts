@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import type { GatewayConfig, GatewaySourceType } from '../types/gatewayConfig';
 import type { ProtocolGatewayStatusRow } from '../types/gatewayStatus';
-import { getPgPoolOrThrow } from '../db/pg';
 
 const router = Router();
 
@@ -33,8 +32,8 @@ function normalizeGatewayConfig(raw: any): GatewayConfig {
   };
 }
 
-router.get('/status', async (_req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+router.get('/status', async (req: Request, res: Response) => {
+  const pool = req.orgPool!;
 
   // Expected DB protocol values.
   const PROTOCOLS: Protocol[] = ['MQTT', 'OPC-UA', 'Modbus TCP', 'REST API'];
@@ -155,9 +154,9 @@ router.get('/status', async (_req: Request, res: Response) => {
 });
 
 // ───────────────────────────── Registered Gateways (List + Edit) ─────────────────────────────
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
-    const pool = getPgPoolOrThrow();
+    const pool = req.orgPool!;
     const { rows } = await pool.query(
       `SELECT id, name, protocol, source_type, segment_id, last_seen_at, status
        FROM gateways
@@ -175,7 +174,7 @@ router.get('/', async (_req: Request, res: Response) => {
 router.get('/:gatewayId', async (req: Request, res: Response) => {
   const gatewayId = String(req.params.gatewayId);
   try {
-    const pool = getPgPoolOrThrow();
+    const pool = req.orgPool!;
     const { rows } = await pool.query(
       `SELECT id, name, protocol, source_type, segment_id, last_seen_at, status
        FROM gateways
@@ -202,7 +201,7 @@ router.post('/', async (req: Request, res: Response) => {
   const payload = req.body ?? {};
 
   try {
-    const pool = getPgPoolOrThrow();
+    const pool = req.orgPool!;
 
     const PROTOCOLS: Protocol[] = ['MQTT', 'OPC-UA', 'Modbus TCP', 'REST API'];
     const isProtocol = (v: unknown): v is Protocol => typeof v === 'string' && PROTOCOLS.includes(v as Protocol);
@@ -263,7 +262,7 @@ router.put('/:gatewayId', async (req: Request, res: Response) => {
   const payload = req.body ?? {};
 
   try {
-    const pool = getPgPoolOrThrow();
+    const pool = req.orgPool!;
 
     const PROTOCOLS: Protocol[] = ['MQTT', 'OPC-UA', 'Modbus TCP', 'REST API'];
     const isProtocol = (v: unknown): v is Protocol => typeof v === 'string' && PROTOCOLS.includes(v as Protocol);

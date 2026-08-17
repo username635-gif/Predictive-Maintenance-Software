@@ -1,5 +1,4 @@
-﻿import { Router, Request, Response } from 'express';
-import { getPgPoolOrThrow } from '../db/pg';
+import { Router, Request, Response } from 'express';
 import { computeTrendProjection } from '../services/predictiveTrend';
 
 const router = Router();
@@ -10,8 +9,8 @@ const router = Router();
 // return an empty list until that service exists and starts inserting
 // rows. That's honest; faking prediction data here would be the same
 // mistake as the original spec's fabricated confidence scores.
-router.get('/', async (_req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+router.get('/', async (req: Request, res: Response) => {
+  const pool = req.orgPool!;
   const { rows } = await pool.query(`SELECT * FROM predictions ORDER BY created_at DESC`);
   res.json({
     predictions: rows,
@@ -23,13 +22,13 @@ router.get('/', async (_req: Request, res: Response) => {
 // see services/predictiveTrend.ts. Distinct from the ML predictions above:
 // this is real math on real stored readings, not a model output.
 router.get('/trend/:sensorId', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const projection = await computeTrendProjection(pool, req.params.sensorId);
   res.json({ trend: projection });
 });
 
 router.get('/segment/:segmentId', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const { rows } = await pool.query(
     `SELECT * FROM predictions WHERE segment_id = $1 ORDER BY created_at DESC LIMIT 1`,
     [req.params.segmentId],
@@ -38,7 +37,7 @@ router.get('/segment/:segmentId', async (req: Request, res: Response) => {
 });
 
 router.get('/:id', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const { rows } = await pool.query(`SELECT * FROM predictions WHERE id = $1`, [req.params.id]);
   if (rows.length === 0) {
     res.status(404).json({ error: 'Prediction not found' });
@@ -50,7 +49,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // POST /:id/feedback — real write to model_feedback, which is what
 // getMlConfidenceIfValidated (alertEngine.ts) actually reads from.
 router.post('/:id/feedback', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const { actual_root_cause, was_correct, corrected_rul, technician_notes, submitted_by } = req.body;
   const predCheck = await pool.query(`SELECT id FROM predictions WHERE id = $1`, [req.params.id]);
   if (predCheck.rows.length === 0) {

@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { getPgPoolOrThrow } from '../db/pg';
 import { getLastKnownReading } from '../services/mqttConsumer';
 
 const router = Router();
@@ -19,7 +18,7 @@ function liveStatus(sensorId: string): { status: 'online' | 'offline'; last_valu
 
 // GET /api/v1/sensors — real query, replaces mockDatabase.getSensors()
 router.get('/', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const { asset_id, type } = req.query;
 
   let query = `SELECT s.*, a.name AS asset_name, a.platform, a.latitude, a.longitude
@@ -43,7 +42,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 // GET /api/v1/sensors/:id — single sensor detail
 router.get('/:id', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const { rows } = await pool.query(
     `SELECT s.*, a.name AS asset_name, a.platform, a.latitude, a.longitude
      FROM sensors s JOIN assets a ON a.id = s.asset_id WHERE s.id = $1`,
@@ -58,7 +57,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 // GET /api/v1/sensors/:id/history?hours=24 -- time-series readings for sparklines
 router.get('/:id/history', async (req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   const hours = Math.min(Math.max(parseInt(String(req.query.hours ?? '24'), 10) || 24, 1), 720);
   const sensorCheck = await pool.query('SELECT id FROM sensors WHERE id = $1', [req.params.id]);
   if (sensorCheck.rows.length === 0) {
@@ -75,8 +74,8 @@ router.get('/:id/history', async (req: Request, res: Response) => {
 });
 
 // GET /api/v1/sensors/health/summary
-router.get('/health/summary', async (_req: Request, res: Response) => {
-  const pool = getPgPoolOrThrow();
+router.get('/health/summary', async (req: Request, res: Response) => {
+  const pool = req.orgPool!;
   const { rows } = await pool.query(`SELECT id FROM sensors`);
   let online = 0;
   let offline = 0;

@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
-import { getPgPoolOrThrow } from '../db/pg';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
@@ -17,7 +16,7 @@ router.post('/sensor-readings', upload.single('file'), async (req: Request, res:
     res.status(400).json({ error: 'No file uploaded (field name: file)' });
     return;
   }
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   let rows: Record<string, string>[];
   try {
     rows = parseCsv(req.file.buffer);
@@ -65,7 +64,7 @@ router.post('/asset-specs', upload.single('file'), async (req: Request, res: Res
     res.status(400).json({ error: 'No file uploaded (field name: file)' });
     return;
   }
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   let rows: Record<string, string>[];
   try {
     rows = parseCsv(req.file.buffer);
@@ -126,7 +125,7 @@ router.post('/incidents', upload.single('file'), async (req: Request, res: Respo
     res.status(400).json({ error: 'No file uploaded (field name: file)' });
     return;
   }
-  const pool = getPgPoolOrThrow();
+  const pool = req.orgPool!;
   let rows: Record<string, string>[];
   try {
     rows = parseCsv(req.file.buffer);
