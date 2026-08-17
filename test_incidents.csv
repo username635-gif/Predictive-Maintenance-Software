@@ -1,0 +1,3 @@
+asset_id,event_timestamp,event_type,description
+SEG-001,2025-11-03T14:00:00Z,leak,Small leak detected during routine patrol
+SEG-999,2025-11-03T14:00:00Z,leak,Should fail - asset does not exist

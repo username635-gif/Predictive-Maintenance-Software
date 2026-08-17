@@ -1,0 +1,4 @@
+sensor_id,timestamp,value,unit,quality_flag
+SEN-SEG-001-ultrasonic_thickness,2026-01-01T08:00:00Z,12.4,mm,good
+SEN-SEG-001-ultrasonic_thickness,2026-01-01T09:00:00Z,12.3,mm,good
+SEN-SEG-001-ultrasonic_thickness,2026-01-01T10:00:00Z,,mm,bad
