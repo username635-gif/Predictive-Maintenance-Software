@@ -1,25 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api, ApiError } from '../../services/api';
-
 type VerifyState = 'loading' | 'success' | 'error';
-
 export const VerifyPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [state, setState] = useState<VerifyState>('loading');
   const [message, setMessage] = useState('');
-
+  const hasFired = useRef(false);
   useEffect(() => {
+    if (hasFired.current) return;
+    hasFired.current = true;
     const email = searchParams.get('email');
     const token = searchParams.get('token');
-
     if (!email || !token) {
       setState('error');
       setMessage('This verification link is missing required information.');
       return;
     }
-
     api
       .verify({ email, token })
       .then(() => {
@@ -31,7 +29,6 @@ export const VerifyPage: React.FC = () => {
         setMessage(err instanceof ApiError ? err.message : 'Could not verify this link.');
       });
   }, [searchParams]);
-
   return (
     <div
       style={{
