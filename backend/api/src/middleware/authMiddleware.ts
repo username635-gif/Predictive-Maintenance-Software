@@ -7,7 +7,7 @@ export interface AuthedUser {
   id: string;
   email: string;
   name: string;
-  role: "technician" | "manager" | "admin";
+  role: "technician" | "manager" | "admin" | null;
   organizationId: string;
 }
 
@@ -34,7 +34,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     res.status(401).json({ error: "Missing or invalid Authorization header" });
     return;
   }
-
   const token = header.slice("Bearer ".length);
   let payload: AuthedUser;
   try {
@@ -43,20 +42,16 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     res.status(401).json({ error: "Invalid or expired token" });
     return;
   }
-
   if (!payload.organizationId) {
-    // Token issued before multi-tenant rollout, or otherwise malformed.
     res.status(401).json({ error: "Token missing organization context -- please log in again" });
     return;
   }
-
   try {
     req.orgPool = await getOrgPool(payload.organizationId);
   } catch (err) {
     res.status(500).json({ error: "Could not resolve organization database" });
     return;
   }
-
   req.user = payload;
   next();
 }
@@ -67,7 +62,7 @@ export function requireRole(...allowedRoles: AuthedUser["role"][]) {
       res.status(401).json({ error: "Not authenticated" });
       return;
     }
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!req.user.role || !allowedRoles.includes(req.user.role)) {
       res.status(403).json({ error: `Requires one of: ${allowedRoles.join(", ")}` });
       return;
     }
