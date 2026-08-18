@@ -50,9 +50,6 @@ router.post("/login", loginLimiter, async (req: Request, res: Response) => {
     [normalizedEmail],
   );
   const user = rows[0];
-  // Covers both "no such user" and status='invited' (password_hash still
-  // null at that point) with the same generic error, so we don't leak
-  // which emails have been invited.
   if (!user || !user.password_hash) {
     res.status(401).json({ error: "Invalid email or password" });
     return;
@@ -70,8 +67,6 @@ router.post("/login", loginLimiter, async (req: Request, res: Response) => {
     res.status(403).json({ error: "This account has been deactivated", status: "deactivated" });
     return;
   }
-  // status is now 'pending' or 'active' -- both allowed to log in.
-  // 'pending' gets a token with role=null; frontend shows a waiting screen.
 
   await orgPool.query(`UPDATE users SET last_login_at = now() WHERE id = $1`, [user.id]);
 
@@ -86,11 +81,6 @@ router.post("/login", loginLimiter, async (req: Request, res: Response) => {
   res.json({ token, user: tokenPayload, status: user.status });
 });
 
-// Live DB lookup, not a JWT echo -- if the DB's role/status has diverged
-// from what's baked into the current token (e.g. an admin just assigned
-// this user a role while they were sitting on the waiting screen), this
-// reissues a fresh token so the frontend doesn't need a logout/login to
-// pick up the change. Polled by the frontend while status === 'pending'.
 router.get("/me", requireAuth, async (req: Request, res: Response) => {
   const orgPool = req.orgPool!;
   const { rows } = await orgPool.query(
@@ -121,13 +111,6 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
   });
 });
 
-// Admin invites an email + (optionally) a role. Two physically separate
-// databases get written -- org_users in the control-plane DB, users in
-// this org's own DB -- so this CANNOT be a single atomic transaction.
-// control-plane is written first (no ON CONFLICT DO NOTHING -- a
-// duplicate here means the email already belongs to some org and must be
-// rejected outright). If the second write then fails, the control-plane
-// row is explicitly deleted to compensate, rather than left orphaned.
 router.post("/invites", requireAuth, requireRole("admin"), async (req: Request, res: Response) => {
   const { email, name, role } = req.body ?? {};
   if (typeof email !== "string" || typeof name !== "string") {
@@ -164,9 +147,6 @@ router.post("/invites", requireAuth, requireRole("admin"), async (req: Request, 
        RETURNING id, email, name, role, status, created_at`,
       [normalizedEmail, name, assignedRole, req.user!.id],
     );
-    // Stand-in for "person was emailed an invite notice" -- email sending
-    // isn't wired up yet. Swap this for a real send later; the endpoints
-    // it points at don't change.
     console.log(`[invite] Signup link for ${normalizedEmail}: http://localhost:3000/signup?email=${encodeURIComponent(normalizedEmail)}`);
     res.status(201).json({ user: rows[0] });
   } catch (err: any) {
@@ -181,9 +161,6 @@ router.post("/invites", requireAuth, requireRole("admin"), async (req: Request, 
   }
 });
 
-// Person completes an invite: proves they know the email (it must already
-// have an 'invited' row) and sets their own password. This does NOT prove
-// inbox ownership -- that's the separate /verify step below.
 router.post("/signup", signupLimiter, async (req: Request, res: Response) => {
   const { email, password } = req.body ?? {};
   if (typeof email !== "string" || typeof password !== "string") {
@@ -220,14 +197,11 @@ router.post("/signup", signupLimiter, async (req: Request, res: Response) => {
     [passwordHash, verificationToken, expiresAt, user.id],
   );
 
-  // Stub: real email send goes here later.
   console.log(`[signup] Verification link for ${normalizedEmail}: http://localhost:3000/verify?email=${encodeURIComponent(normalizedEmail)}&token=${verificationToken}`);
 
   res.status(200).json({ message: "Account created. Check your email to verify." });
 });
 
-// Proves inbox ownership. Flips status to 'active' if a role was already
-// assigned at invite time, otherwise 'pending' (waiting screen).
 router.post("/verify", async (req: Request, res: Response) => {
   const { email, token } = req.body ?? {};
   if (typeof email !== "string" || typeof token !== "string") {
@@ -262,6 +236,34 @@ router.post("/verify", async (req: Request, res: Response) => {
     [newStatus, user.id],
   );
   res.status(200).json({ status: newStatus });
+});
+
+// Admin sets/changes a user's role. If that user was 'pending' (verified,
+// no role yet), this also flips them to 'active' as a side effect -- any
+// other status (invited/unverified/active/deactivated) is left as-is, so
+// this can't be used to un-deactivate someone or skip verification.
+router.patch("/users/:id/role", requireAuth, requireRole("admin"), async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { role } = req.body ?? {};
+  const validRoles = ["technician", "manager", "admin"];
+  if (!validRoles.includes(role)) {
+    res.status(400).json({ error: `role must be one of: ${validRoles.join(", ")}` });
+    return;
+  }
+  const orgPool = req.orgPool!;
+  const { rows } = await orgPool.query(`SELECT id, status FROM users WHERE id = $1`, [id]);
+  const user = rows[0];
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const newStatus = user.status === "pending" ? "active" : user.status;
+  const { rows: updated } = await orgPool.query(
+    `UPDATE users SET role = $1, status = $2 WHERE id = $3
+     RETURNING id, email, name, role, status`,
+    [role, newStatus, id],
+  );
+  res.status(200).json({ user: updated[0] });
 });
 
 export default router;
