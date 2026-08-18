@@ -60,9 +60,20 @@ export const SignInPage: React.FC = () => {
       });
 
       if (!res.ok) {
+        // Prefer the backend's specific reason (e.g. unverified/deactivated)
+        // over a generic message where it's provided -- these are genuinely
+        // different situations for the user and shouldn't be flattened into
+        // "wrong password."
         let message = "Invalid credentials. Please sign in with your company account.";
         if (res.status === 429) {
           message = "Too many login attempts. Try again in a few minutes.";
+        } else {
+          try {
+            const body = await res.json();
+            if (typeof body?.error === "string") message = body.error;
+          } catch {
+            // body wasn't JSON -- keep the generic message
+          }
         }
         setErrorMessage(message);
         setError(true);
@@ -71,8 +82,8 @@ export const SignInPage: React.FC = () => {
       }
 
       const data = await res.json();
-      if (typeof data.token !== "string" || !data.user) {
-        // Backend contract changed unexpectedly â€” fail loudly in console
+      if (typeof data.token !== "string" || !data.user || (data.status !== "pending" && data.status !== "active")) {
+        // Backend contract changed unexpectedly -- fail loudly in console
         // rather than silently mis-storing a broken session.
         console.error("[SignInPage] Unexpected login response shape:", data);
         setErrorMessage("Unexpected server response. Contact an administrator.");
@@ -80,12 +91,12 @@ export const SignInPage: React.FC = () => {
         return;
       }
 
-      setRosSession({ token: data.token, user: data.user });
-      navigate("/map", { replace: true });
+      setRosSession({ token: data.token, user: data.user, status: data.status });
+      navigate(data.status === "pending" ? "/waiting-for-role" : "/map", { replace: true });
     } catch (err) {
       // Network failure: backend down, wrong VITE_API_BASE_URL, or CORS
       // rejection. Indistinguishable from bad credentials in this UI right
-      // now â€” check the browser console/Network tab if this fires
+      // now -- check the browser console/Network tab if this fires
       // immediately on every attempt, since that points to config, not
       // a typo'd password.
       console.error("[SignInPage] Login request failed:", err);
@@ -281,7 +292,7 @@ export const SignInPage: React.FC = () => {
               </svg>
               <span style={styles.headerReliabilityOS}>ReliabilityOS</span>
             </div>
-            <div style={styles.headerLine2}>Permian 500 Â· Pipeline Integrity Platform</div>
+            <div style={styles.headerLine2}>Permian 500 - Pipeline Integrity Platform</div>
             <div style={styles.headerLine3}>Authorized personnel only</div>
             <div style={styles.headerDivider} />
           </div>
@@ -331,7 +342,7 @@ export const SignInPage: React.FC = () => {
                   setPassword(e.target.value);
                   if (error) setError(false);
                 }}
-                placeholder={"â€¢â€¢â€¢â€¢â€¢â€¢â€¢"}
+                placeholder={"*******"}
                 onFocus={(e) => {
                   e.currentTarget.style.borderColor = COLORS.focusBorder;
                 }}
@@ -365,7 +376,7 @@ export const SignInPage: React.FC = () => {
               (e.currentTarget as HTMLButtonElement).style.borderColor = COLORS.border;
             }}
           >
-            {submitting ? "Signing inâ€¦" : "Sign in"}
+            {submitting ? "Signing in..." : "Sign in"}
           </button>
 
           <div
@@ -384,10 +395,9 @@ export const SignInPage: React.FC = () => {
         </form>
 
         <div style={styles.footer}>
-          © 2026 ReliabilityOS · For authorized use only
+          (c) 2026 ReliabilityOS - For authorized use only
         </div>
       </div>
     </div>
   );
 };
-

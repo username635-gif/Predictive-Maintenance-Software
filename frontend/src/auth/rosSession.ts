@@ -1,15 +1,17 @@
 export type UserRole = "technician" | "manager" | "admin";
+export type UserStatus = "pending" | "active";
 
 export interface RosUser {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
+  role: UserRole | null;
 }
 
 export type RosSession = {
   token: string;
   user: RosUser;
+  status: UserStatus;
 };
 
 const ROS_SESSION_KEY = "ros_session";
@@ -37,6 +39,14 @@ export function getRosSession(): RosSession | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
 
+    const validRole =
+      parsed?.user?.role === null ||
+      parsed?.user?.role === "technician" ||
+      parsed?.user?.role === "manager" ||
+      parsed?.user?.role === "admin";
+
+    const validStatus = parsed?.status === "pending" || parsed?.status === "active";
+
     const validUser =
       parsed &&
       parsed.user &&
@@ -44,9 +54,8 @@ export function getRosSession(): RosSession | null {
       typeof parsed.user.id === "string" &&
       typeof parsed.user.email === "string" &&
       typeof parsed.user.name === "string" &&
-      (parsed.user.role === "technician" ||
-        parsed.user.role === "manager" ||
-        parsed.user.role === "admin");
+      validRole &&
+      validStatus;
 
     if (!validUser) return null;
 
@@ -56,7 +65,7 @@ export function getRosSession(): RosSession | null {
       return null;
     }
 
-    return { token: parsed.token, user: parsed.user };
+    return { token: parsed.token, user: parsed.user, status: parsed.status };
   } catch {
     return null;
   }

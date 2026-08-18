@@ -1,5 +1,6 @@
 import { apiBaseUrl } from '../utils/apiBase';
 import { getAuthToken, clearRosSession } from '../auth/rosSession';
+import type { UserRole } from '../auth/rosSession';
 
 export class ApiError extends Error {
   status: number;
@@ -39,6 +40,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface MeResponse {
+  user: { id: string; email: string; name: string; role: UserRole | null; organizationId: string };
+  status: 'pending' | 'active';
+  token?: string;
+}
+
 export const api = {
   getAssets: () => request<{ count: number; assets: unknown[] }>('/api/v1/assets'),
   getAlerts: () => request<{ alerts: unknown[] }>('/api/v1/alerts'),
@@ -66,5 +73,14 @@ export const api = {
     request<{ gateway: unknown }>('/api/v1/gateways', { method: 'POST', body: JSON.stringify(payload) }),
   updateGateway: (id: string, payload: unknown) =>
     request<{ gateway: unknown }>(`/api/v1/gateways/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(payload) }),
-};
 
+  getMe: () => request<MeResponse>('/api/v1/auth/me'),
+  invite: (payload: { email: string; name: string; role?: UserRole }) =>
+    request<{ user: unknown }>('/api/v1/auth/invites', { method: 'POST', body: JSON.stringify(payload) }),
+  signup: (payload: { email: string; password: string }) =>
+    request<{ message: string }>('/api/v1/auth/signup', { method: 'POST', body: JSON.stringify(payload) }),
+  verify: (payload: { email: string; token: string }) =>
+    request<{ status: string }>('/api/v1/auth/verify', { method: 'POST', body: JSON.stringify(payload) }),
+  assignRole: (id: string, role: UserRole) =>
+    request<{ user: unknown }>(`/api/v1/auth/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+};
