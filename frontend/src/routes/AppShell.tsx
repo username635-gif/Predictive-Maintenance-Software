@@ -13,7 +13,7 @@ import { useOfflineDetector } from '../hooks/useOffline';
 import { connectSocket, disconnectSocket } from '../services/socket';
 
 import { useNavigate } from 'react-router-dom';
-import { clearRosSession } from '../auth/rosSession';
+import { clearRosSession, getRosSession } from '../auth/rosSession';
 import { Suspense, lazy, useEffect, useState } from 'react';
 
 const WorkOrderModal = lazy(() => import('../components/workorders/WorkOrderModal').then(m => ({ default: m.WorkOrderModal })));
@@ -22,6 +22,7 @@ const SensorHealthModal = lazy(() => import('../components/sensors/SensorHealthM
 const PIGComparisonModal = lazy(() => import('../components/pig/PIGComparisonModal').then(m => ({ default: m.PIGComparisonModal })));
 const ComplianceReportModal = lazy(() => import('../components/reports/ComplianceReportModal').then(m => ({ default: m.ComplianceReportModal })));
 const GatewaysModal = lazy(() => import('../components/gateways/GatewaysModal').then(m => ({ default: m.GatewaysModal })));
+const InviteModal = lazy(() => import('../components/admin/InviteModal').then(m => ({ default: m.InviteModal })));
 
 export const AppShell: React.FC = () => {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ export const AppShell: React.FC = () => {
 
   }
 
+  const isAdmin = getRosSession()?.user?.role === 'admin';
 
   const {
     viewMode, activeModal, openModal, closeModal, alerts,
@@ -98,6 +100,7 @@ export const AppShell: React.FC = () => {
           onOpenGateways={() => openModal('gateways')}
           onOpenWorkOrders={() => openModal('workorders')}
           onOpenReport={() => openModal('report')}
+          onOpenInvite={isAdmin ? () => openModal('invite') : undefined}
           onSignOut={onSignOut}
         />
       </div>
@@ -154,6 +157,7 @@ export const AppShell: React.FC = () => {
         {activeModal === 'pig' && <PIGComparisonModal onClose={closeModal} />}
         {activeModal === 'report' && <ComplianceReportModal onClose={closeModal} />}
         {activeModal === 'gateways' && <GatewaysModal onClose={closeModal} />}
+        {activeModal === 'invite' && <InviteModal onClose={closeModal} />}
       </Suspense>
 
       {/* Gateway config modal manager (wired to gateway-config-create/edit events) */}

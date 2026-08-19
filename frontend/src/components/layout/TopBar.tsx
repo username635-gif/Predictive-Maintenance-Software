@@ -4,7 +4,7 @@ import { fmtROI } from '../../utils/formatting';
 import { timeAgo } from '../../utils/formatting';
 import {
   Activity, AlertTriangle, Bell, ChevronDown, Cpu, Wifi, WifiOff,
-  BarChart2, FileText, Wrench, Map, Layers, LogOut
+  BarChart2, FileText, Wrench, Map, Layers, LogOut, UserPlus
 } from 'lucide-react';
 
 type DemoControlsProps = {
@@ -103,6 +103,7 @@ interface TopBarProps {
   onOpenWorkOrders: () => void;
   onOpenGateways: () => void;
   onOpenReport: () => void;
+  onOpenInvite?: () => void;
   onSignOut?: () => void;
 }
 
@@ -113,6 +114,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenGateways,
   onOpenWorkOrders,
   onOpenReport,
+  onOpenInvite,
   onSignOut,
 }) => {
 
@@ -265,6 +267,17 @@ export const TopBar: React.FC<TopBarProps> = ({
       <button className="btn btn-secondary btn-sm" onClick={onOpenReport} style={{ gap: '5px' }}>
         <FileText size={13} /> Reports
       </button>
+
+      {onOpenInvite && (
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={onOpenInvite}
+          style={{ gap: '5px' }}
+          title="Invite a new user"
+        >
+          <UserPlus size={13} /> Invite
+        </button>
+      )}
 
       <div style={{ width: '1px', height: '28px', background: 'var(--border)' }} />
 

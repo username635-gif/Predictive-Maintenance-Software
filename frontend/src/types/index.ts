@@ -1,4 +1,4 @@
-﻿// ─── Core Sensor & Pipeline Types ────────────────────────────────────────────
+// ─── Core Sensor & Pipeline Types ────────────────────────────────────────────
 
 export type SensorType =
   | 'ultrasonic_thickness'
@@ -278,4 +278,5 @@ export interface ConnectivityStatus {
 }
 
 export type ViewMode = 'map' | 'longitudinal';
-export type ActiveModal = 'roi' | 'sensors' | 'pig' | 'workorders' | 'leak' | 'report' | 'gateways' | null;
+export type ActiveModal = 'roi' | 'sensors' | 'pig' | 'workorders' | 'leak' | 'report' | 'gateways' | 'invite' | null;
+
