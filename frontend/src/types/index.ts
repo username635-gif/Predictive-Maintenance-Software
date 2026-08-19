@@ -278,5 +278,6 @@ export interface ConnectivityStatus {
 }
 
 export type ViewMode = 'map' | 'longitudinal';
-export type ActiveModal = 'roi' | 'sensors' | 'pig' | 'workorders' | 'leak' | 'report' | 'gateways' | 'invite' | null;
+export type ActiveModal = 'roi' | 'sensors' | 'pig' | 'workorders' | 'leak' | 'report' | 'gateways' | 'invite' | 'import' | null;
+
 

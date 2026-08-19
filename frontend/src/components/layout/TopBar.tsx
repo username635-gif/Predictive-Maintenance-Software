@@ -4,7 +4,7 @@ import { fmtROI } from '../../utils/formatting';
 import { timeAgo } from '../../utils/formatting';
 import {
   Activity, AlertTriangle, Bell, ChevronDown, Cpu, Wifi, WifiOff,
-  BarChart2, FileText, Wrench, Map, Layers, LogOut, UserPlus
+  BarChart2, FileText, Wrench, Map, Layers, LogOut, UserPlus, UploadCloud
 } from 'lucide-react';
 
 type DemoControlsProps = {
@@ -104,6 +104,7 @@ interface TopBarProps {
   onOpenGateways: () => void;
   onOpenReport: () => void;
   onOpenInvite?: () => void;
+  onOpenImport?: () => void;
   onSignOut?: () => void;
 }
 
@@ -115,6 +116,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenWorkOrders,
   onOpenReport,
   onOpenInvite,
+  onOpenImport,
   onSignOut,
 }) => {
 
@@ -276,6 +278,17 @@ export const TopBar: React.FC<TopBarProps> = ({
           title="Invite a new user"
         >
           <UserPlus size={13} /> Invite
+        </button>
+      )}
+
+      {onOpenImport && (
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={onOpenImport}
+          style={{ gap: '5px' }}
+          title="Import vendor CSV data"
+        >
+          <UploadCloud size={13} /> Import
         </button>
       )}
 

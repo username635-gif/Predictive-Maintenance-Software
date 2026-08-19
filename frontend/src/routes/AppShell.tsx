@@ -23,6 +23,7 @@ const PIGComparisonModal = lazy(() => import('../components/pig/PIGComparisonMod
 const ComplianceReportModal = lazy(() => import('../components/reports/ComplianceReportModal').then(m => ({ default: m.ComplianceReportModal })));
 const GatewaysModal = lazy(() => import('../components/gateways/GatewaysModal').then(m => ({ default: m.GatewaysModal })));
 const InviteModal = lazy(() => import('../components/admin/InviteModal').then(m => ({ default: m.InviteModal })));
+const ImportModal = lazy(() => import('../components/admin/ImportModal').then(m => ({ default: m.ImportModal })));
 
 export const AppShell: React.FC = () => {
   const navigate = useNavigate();
@@ -101,6 +102,7 @@ export const AppShell: React.FC = () => {
           onOpenWorkOrders={() => openModal('workorders')}
           onOpenReport={() => openModal('report')}
           onOpenInvite={isAdmin ? () => openModal('invite') : undefined}
+          onOpenImport={isAdmin ? () => openModal('import') : undefined}
           onSignOut={onSignOut}
         />
       </div>
@@ -158,6 +160,7 @@ export const AppShell: React.FC = () => {
         {activeModal === 'report' && <ComplianceReportModal onClose={closeModal} />}
         {activeModal === 'gateways' && <GatewaysModal onClose={closeModal} />}
         {activeModal === 'invite' && <InviteModal onClose={closeModal} />}
+        {activeModal === 'import' && <ImportModal onClose={closeModal} />}
       </Suspense>
 
       {/* Gateway config modal manager (wired to gateway-config-create/edit events) */}

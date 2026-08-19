@@ -40,10 +40,52 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// Separate from request<T>() because file uploads must NOT set
+// Content-Type: application/json -- the browser needs to set
+// multipart/form-data with its own boundary string automatically,
+// which only happens if we don't set Content-Type ourselves at all.
+async function uploadFile<T>(path: string, file: File): Promise<T> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${apiBaseUrl()}${path}`, { method: 'POST', headers, body: formData });
+
+  if (res.status === 401) {
+    clearRosSession();
+    window.dispatchEvent(new CustomEvent('auth-session-expired'));
+    throw new ApiError(401, 'Session expired -- please sign in again.');
+  }
+
+  if (!res.ok) {
+    let message = `Request failed (${res.status})`;
+    try {
+      const body = await res.json();
+      if (body?.error) message = body.error;
+    } catch {
+      // response body wasn't JSON -- keep the generic message
+    }
+    throw new ApiError(res.status, message);
+  }
+
+  return res.json() as Promise<T>;
+}
+
 export interface MeResponse {
   user: { id: string; email: string; name: string; role: UserRole | null; organizationId: string };
   status: 'pending' | 'active';
   token?: string;
+}
+
+export interface ImportResult {
+  total_rows: number;
+  inserted?: number;
+  updated?: number;
+  error_count: number;
+  errors: { row: number; error: string }[];
 }
 
 export const api = {
@@ -83,4 +125,8 @@ export const api = {
     request<{ status: string }>('/api/v1/auth/verify', { method: 'POST', body: JSON.stringify(payload) }),
   assignRole: (id: string, role: UserRole) =>
     request<{ user: unknown }>(`/api/v1/auth/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+
+  importSensorReadings: (file: File) => uploadFile<ImportResult>('/api/v1/import/sensor-readings', file),
+  importAssetSpecs: (file: File) => uploadFile<ImportResult>('/api/v1/import/asset-specs', file),
+  importIncidents: (file: File) => uploadFile<ImportResult>('/api/v1/import/incidents', file),
 };
