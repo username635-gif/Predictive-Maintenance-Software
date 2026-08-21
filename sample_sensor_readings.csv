@@ -1,0 +1,4 @@
+sensor_id,timestamp,value,unit,quality_flag
+SEN-SEG-001-ultrasonic_thickness,2026-08-01T00:00:00Z,42.5,mm,good
+SEN-SEG-001-ultrasonic_thickness,2026-08-01T01:00:00Z,43.1,mm,good
+SEN-SEG-001-pressure_transmitter,2026-08-01T00:00:00Z,88.2,psi,bad
