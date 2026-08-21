@@ -10,6 +10,7 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import authRouter from './routes/auth';
 import sensorsRouter from './routes/sensors';
+import sensorsBulkRouter from './routes/sensorsBulk';
 import predictionsRouter from './routes/predictions';
 import workordersRouter from './routes/workorders';
 import roiRouter from './routes/roi';
@@ -22,6 +23,7 @@ import importRouter from './routes/import';
 import orgsRouter from './routes/orgs';
 import { errorHandler } from './middleware/errorHandler';
 import { requireAuth, requireRole } from './middleware/authMiddleware';
+import { requireGatewayKey } from './middleware/gatewayAuth';
 import { getPgPool } from './db/pg';
 import { startMqttConsumer } from './services/mqttConsumer';
 
@@ -207,6 +209,16 @@ app.use('/api/v1/auth', authRouter);
 // deliberately not behind requireAuth (no org/user exists yet when this is called).
 app.use('/api/v1/orgs', orgsRouter);
 
+// Field-gateway ingestion -- authenticated by a per-gateway API key
+// (requireGatewayKey), NOT a user JWT. MUST be mounted before the
+// requireAuth-protected '/api/v1/sensors' line below: Express matches
+// app.use mounts in registration order, and a more specific path
+// registered first takes the request before a broader prefix registered
+// later ever sees it. If these two lines are ever reordered, gateway
+// requests to /bulk would incorrectly hit requireAuth and get rejected
+// for missing a JWT that a gateway will never have.
+app.use('/api/v1/sensors/bulk', requireGatewayKey, sensorsBulkRouter);
+
 // Every route below was previously mounted with ZERO auth enforcement.
 // requireAuth is now applied at the mount point for all of them.
 // roi.ts additionally requires admin/manager — CONFIRM this matches your
@@ -241,4 +253,3 @@ httpServer.listen(PORT, () => {
 });
 
 export { app, io };
-
