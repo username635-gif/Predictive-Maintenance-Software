@@ -153,6 +153,12 @@ export async function upsertAlert(
     recommendedActionText: string;
     confidence: number | null;
     costAvoidedEstimate: number;
+    // NEW: when set (backfill/CSV import), stamps created_at/updated_at with
+    // the historical reading time instead of import wall-clock time — required
+    // for alert-timing-vs-real-failure validation to mean anything. Leave
+    // undefined/null for the live MQTT path (falls back to now(), unchanged
+    // behavior).
+    occurredAt?: string | null;
   },
 ): Promise<{ id: string; isNew: boolean }> {
   const existing = await pool.query<{ id: string }>(
@@ -161,7 +167,9 @@ export async function upsertAlert(
   );
 
   if (existing.rows.length > 0) {
-    // Same underlying issue still active — refresh evidence, don't duplicate.
+    // Backfill note: updated_at still moves on a re-trigger during import —
+    // it represents "row last touched", not reading time. occurredAt on the
+    // ORIGINAL insert (below) is what timing validation actually reads.
     await pool.query(
       `UPDATE alerts SET trigger_summary = $1, confidence = $2, updated_at = now(), dwell_start_at = NULL
        WHERE id = $3`,
@@ -173,8 +181,8 @@ export async function upsertAlert(
   const inserted = await pool.query<{ id: string }>(
     `INSERT INTO alerts
        (asset_id, prediction_id, root_cause_signature, source, tier, trigger_summary,
-        recommended_action, confidence, cost_avoided_estimate)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        recommended_action, confidence, cost_avoided_estimate, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, COALESCE($10, now()), COALESCE($10, now()))
      RETURNING id`,
     [
       params.assetId,
@@ -186,6 +194,7 @@ export async function upsertAlert(
       params.recommendedActionText,
       params.confidence,
       params.costAvoidedEstimate,
+      params.occurredAt ?? null,
     ],
   );
   return { id: inserted.rows[0].id, isNew: true };
@@ -194,7 +203,10 @@ export async function upsertAlert(
 /** Call this once per polling cycle for every currently-open alert whose
  *  breach condition no longer holds. Auto-closes only after the metric has
  *  held inside baseline for AUTO_CLOSE_DWELL_MINUTES straight — prevents
- *  flapping open/closed on a noisy sensor. */
+ *  flapping open/closed on a noisy sensor.
+ *  NOT called during backfill import (see evaluateReading's skipDwellTick) —
+ *  this logic is wall-clock (now() - dwell_start_at) and is meaningless
+ *  against historical data replayed all at once. */
 export async function tickDwellAndAutoClose(pool: Pool, alertId: string, currentlyInBaseline: boolean): Promise<void> {
   if (!currentlyInBaseline) {
     await pool.query(`UPDATE alerts SET dwell_start_at = NULL WHERE id = $1`, [alertId]);

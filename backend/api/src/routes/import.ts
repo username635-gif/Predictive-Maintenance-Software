@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
+import { evaluateReading } from '../services/mqttConsumer';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
@@ -11,6 +12,26 @@ function parseCsv(buffer: Buffer): Record<string, string>[] {
 
 // POST /api/v1/import/sensor-readings
 // Expects columns: sensor_id, timestamp, value, unit, quality_flag
+//
+// CHANGED: now runs each row through evaluateReading() (the same rule engine
+// live MQTT readings go through) instead of writing straight to
+// sensor_readings — this is what actually generates alerts from imported
+// data. Backfill-specific behavior, all deliberate, not oversights:
+//   - Rows sorted by sensor_id then timestamp before evaluation. evaluateReading's
+//     flatline/breach-confirmation logic is sequence-dependent (module-scoped
+//     state keyed by sensor_id) and needs real chronological order per sensor,
+//     not CSV row order.
+//   - readingTimestamp passed through so sensor_readings.reading_at and (if an
+//     alert fires) alerts.created_at reflect the real historical time, not
+//     import time — required to validate alert timing against real failures.
+//   - suppressDelivery: true — a backfill must never fire real webhook/SMS/email
+//     notifications for historical events.
+//   - skipDwellTick: true — the dwell/auto-close timer is wall-clock based and
+//     meaningless against historical data replayed all at once.
+//   - Rows with vendor quality_flag=bad are written directly (bypassing
+//     evaluateReading's own flatline/jump detection), same as before this
+//     change — ASSUMPTION: vendor's own bad-flag should be trusted as-is
+//     rather than re-derived. Flag if you want it re-evaluated instead.
 router.post('/sensor-readings', upload.single('file'), async (req: Request, res: Response) => {
   if (!req.file) {
     res.status(400).json({ error: 'No file uploaded (field name: file)' });
@@ -24,8 +45,11 @@ router.post('/sensor-readings', upload.single('file'), async (req: Request, res:
     res.status(400).json({ error: 'Failed to parse CSV', detail: e instanceof Error ? e.message : String(e) });
     return;
   }
+
   let inserted = 0;
   const errors: { row: number; error: string }[] = [];
+
+  const validRows: { r: Record<string, string>; i: number; value: number }[] = [];
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
     if (!r.sensor_id || !r.timestamp || !r.value) {
@@ -37,18 +61,38 @@ router.post('/sensor-readings', upload.single('file'), async (req: Request, res:
       errors.push({ row: i + 2, error: `Non-numeric value: ${r.value}` });
       continue;
     }
+    validRows.push({ r, i, value });
+  }
+
+  // Chronological order per sensor — required by evaluateReading's
+  // sequence-dependent state (see comment above).
+  validRows.sort((a, b) => {
+    if (a.r.sensor_id !== b.r.sensor_id) return a.r.sensor_id < b.r.sensor_id ? -1 : 1;
+    return new Date(a.r.timestamp).getTime() - new Date(b.r.timestamp).getTime();
+  });
+
+  for (const { r, i, value } of validRows) {
     const isFlaggedBad = String(r.quality_flag ?? '').toLowerCase() === 'bad';
     try {
-      await pool.query(
-        `INSERT INTO sensor_readings (sensor_id, reading_at, value, is_flagged_bad, flag_reason)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [r.sensor_id, r.timestamp, value, isFlaggedBad, isFlaggedBad ? (r.quality_flag ?? 'vendor_flagged') : null],
-      );
+      if (isFlaggedBad) {
+        await pool.query(
+          `INSERT INTO sensor_readings (sensor_id, reading_at, value, is_flagged_bad, flag_reason)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [r.sensor_id, r.timestamp, value, true, r.quality_flag ?? 'vendor_flagged'],
+        );
+      } else {
+        await evaluateReading(pool, r.sensor_id, value, {
+          readingTimestamp: r.timestamp,
+          suppressDelivery: true,
+          skipDwellTick: true,
+        });
+      }
       inserted++;
     } catch (e) {
       errors.push({ row: i + 2, error: e instanceof Error ? e.message : String(e) });
     }
   }
+
   res.json({ total_rows: rows.length, inserted, error_count: errors.length, errors: errors.slice(0, 50) });
 });
 

@@ -39,13 +39,13 @@ async function main() {
   // on the ring buffer being empty, then breach below hard_min.
   const midpoint = (sensor.hard_min + sensor.hard_max) / 2;
   for (let i = 0; i < 3; i++) {
-    await evaluateReading(sensor.id, midpoint + (Math.random() - 0.5));
+    await evaluateReading(pool, sensor.id, midpoint + (Math.random() - 0.5));
   }
 
   const breachValue = sensor.hard_min - 25; // clearly below threshold
   console.log(`Feeding breach reading: ${breachValue} (below hard_min of ${sensor.hard_min})`);
-  await evaluateReading(sensor.id, breachValue); // 1st breach — expected to be held pending, no alert yet
-  await evaluateReading(sensor.id, breachValue); // 2nd consecutive same-direction breach — should confirm and alert
+  await evaluateReading(pool, sensor.id, breachValue); // 1st breach — expected to be held pending, no alert yet
+  await evaluateReading(pool, sensor.id, breachValue); // 2nd consecutive same-direction breach — should confirm and alert
 
   // Check what actually landed in the alerts table.
   const alertRes = await pool.query(
@@ -102,7 +102,7 @@ async function main() {
   await pool.query(`DELETE FROM alerts WHERE asset_id = 'SEG-021'`);
   const stuckNormalValue = 850; // in-range, so flatline alone is testable without threshold interference
   for (let i = 0; i < 12; i++) {
-    await evaluateReading(sensorRes.rows[0].id, stuckNormalValue);
+    await evaluateReading(pool, sensorRes.rows[0].id, stuckNormalValue);
   }
   const noAlertExpected = await pool.query(`SELECT id FROM alerts WHERE asset_id = 'SEG-021'`);
   console.log(
