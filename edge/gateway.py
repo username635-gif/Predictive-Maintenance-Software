@@ -28,25 +28,67 @@ from pathlib import Path
 import requests
 import schedule
 import structlog
+import yaml
 from dotenv import load_dotenv
 
-from local_rules import RulesEngine
-from mqtt_bridge import MQTTBridge
+from edge.local_rules import RulesEngine
+from edge.mqtt_bridge import MQTTBridge
 
 load_dotenv()
 
 log = structlog.get_logger()
 
+# ─────────────────────────────── YAML config (cloud.* block only) ─────────────
+# Precedence: env var > config.yaml > hardcoded default below. This lets an
+# operator override a checked-in config.yaml at deploy time via env vars,
+# while still getting sane values if config.yaml is missing or malformed.
+#
+# GATEWAY_API_KEY is deliberately NOT loaded from config.yaml, ever --
+# config.yaml is a tracked file in this repo (confirmed via git ls-files),
+# so writing a real key into it would commit a live secret to git history.
+# It is env-var-only, sourced from a local .env (gitignored) or the
+# deployment environment.
+_CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
+
+
+def _load_yaml_config(path: Path) -> dict:
+    if not path.exists():
+        log.warning("CONFIG_YAML_MISSING", path=str(path))
+        return {}
+    try:
+        with open(path, "r") as f:
+            data = yaml.safe_load(f) or {}
+        if not isinstance(data, dict):
+            log.warning("CONFIG_YAML_INVALID", path=str(path), reason="top-level is not a mapping")
+            return {}
+        return data
+    except Exception as exc:
+        log.warning("CONFIG_YAML_PARSE_ERROR", path=str(path), error=str(exc))
+        return {}
+
+
+_yaml_config = _load_yaml_config(_CONFIG_PATH)
+_yaml_cloud = _yaml_config.get("cloud", {}) if isinstance(_yaml_config.get("cloud"), dict) else {}
+
 # ─────────────────────────────── Config ───────────────────────────────────────
 GATEWAY_ID = os.environ.get("GATEWAY_ID", "EG-04")
 GATEWAY_DESCRIPTION = os.environ.get("GATEWAY_DESCRIPTION", "Mile 250 Remote Station")
-CLOUD_API_URL = os.environ.get("CLOUD_API_URL", "http://localhost:8080")
-CLOUD_SYNC_INTERVAL_S = int(os.environ.get("CLOUD_SYNC_INTERVAL_S", "30"))
+CLOUD_API_URL = os.environ.get("CLOUD_API_URL", _yaml_cloud.get("api_url", "http://localhost:8080"))
+CLOUD_SYNC_INTERVAL_S = int(os.environ.get("CLOUD_SYNC_INTERVAL_S", _yaml_cloud.get("sync_interval_seconds", 30)))
+CLOUD_TIMEOUT_S = int(os.environ.get("CLOUD_TIMEOUT_S", _yaml_cloud.get("timeout_seconds", 10)))
+CLOUD_RETRY_LIMIT = int(os.environ.get("CLOUD_RETRY_LIMIT", _yaml_cloud.get("retry_limit", 3)))
+GATEWAY_API_KEY = os.environ.get("GATEWAY_API_KEY", "")
 SENSOR_POLL_INTERVAL_S = int(os.environ.get("SENSOR_POLL_INTERVAL_S", "5"))
 DB_PATH = Path(os.environ.get("DB_PATH", "gateway_buffer.db"))
 MQTT_HOST = os.environ.get("MQTT_HOST", "localhost")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
 MAX_BUFFER_ROWS = int(os.environ.get("MAX_BUFFER_ROWS", "100000"))
+
+if not GATEWAY_API_KEY:
+    log.warning(
+        "GATEWAY_API_KEY_UNSET",
+        detail="No gateway API key configured -- cloud sync will be rejected with 401 until GATEWAY_API_KEY is set in the environment.",
+    )
 
 # ─────────────────────────────── ConnectivityState ────────────────────────────
 class ConnectivityState:
@@ -172,12 +214,15 @@ def sync_to_cloud(conn: sqlite3.Connection) -> None:
         resp = requests.post(
             f"{CLOUD_API_URL}/api/v1/sensors/bulk",
             json={"gateway_id": GATEWAY_ID, "readings": rows},
-            timeout=10,
+            headers={"X-Gateway-Key": GATEWAY_API_KEY},
+            timeout=CLOUD_TIMEOUT_S,
         )
         if resp.status_code in (200, 201):
             ids = [r["_row_id"] for r in rows]
             mark_synced(conn, ids)
             log.info("SYNCED", count=len(rows), gateway=GATEWAY_ID)
+        elif resp.status_code == 401:
+            log.error("SYNC_UNAUTHORIZED", detail="Gateway key rejected by cloud -- check GATEWAY_API_KEY", status=resp.status_code)
         else:
             log.warning("SYNC_FAILED", status=resp.status_code)
     except Exception as exc:
