@@ -17,7 +17,7 @@ const router = Router();
 // edge-local adapter-confidence metadata, separate from is_flagged_bad
 // (which evaluateReading derives independently via flatline/jump
 // detection) -- deliberately not conflated with it.
-router.post('/bulk', async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   const pool = req.orgPool!;
   const body = req.body ?? {};
   const readings = Array.isArray(body.readings) ? body.readings : null;
@@ -83,4 +83,5 @@ router.post('/bulk', async (req: Request, res: Response) => {
 });
 
 export default router;
+
 

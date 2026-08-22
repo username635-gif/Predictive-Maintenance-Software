@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import type { GatewayConfig, GatewaySourceType } from '../types/gatewayConfig';
 import type { ProtocolGatewayStatusRow } from '../types/gatewayStatus';
+import { generateGatewayKey, hashGatewayKey } from '../middleware/gatewayAuth';
+import { getPgPoolOrThrow } from '../db/pg';
 
 const router = Router();
 
@@ -197,11 +199,18 @@ router.get('/:gatewayId', async (req: Request, res: Response) => {
 });
 
 // ───────────────────────────── Register New Gateway (Create) ─────────────────────────────
+// On success this also provisions a gateway API key: generates a plaintext
+// key, stores only its hash (control-plane gateway_registry), and returns
+// the plaintext exactly once in this response. It is never persisted
+// anywhere in plaintext and cannot be recovered later -- only reissued
+// (not yet built: a reissue endpoint would need to invalidate the old
+// registry row, since key_hash is the primary key).
 router.post('/', async (req: Request, res: Response) => {
   const payload = req.body ?? {};
 
   try {
     const pool = req.orgPool!;
+    const organizationId = req.user!.organizationId;
 
     const PROTOCOLS: Protocol[] = ['MQTT', 'OPC-UA', 'Modbus TCP', 'REST API'];
     const isProtocol = (v: unknown): v is Protocol => typeof v === 'string' && PROTOCOLS.includes(v as Protocol);
@@ -248,7 +257,36 @@ router.post('/', async (req: Request, res: Response) => {
     );
 
     const created = rows[0];
-    res.status(201).json({ gateway: normalizeGatewayConfig(created) });
+
+    // Provision the gateway API key. This write is in a SEPARATE database
+    // (control-plane) from the insert above (org DB) -- Postgres cannot
+    // transaction across two connections, so this is not atomic with the
+    // insert above. If it fails, we compensate by deleting the just-created
+    // gateway row rather than leaving an unusable, keyless gateway behind.
+    const plaintextKey = generateGatewayKey();
+    const keyHash = hashGatewayKey(plaintextKey);
+
+    try {
+      const control = getPgPoolOrThrow();
+      await control.query(
+        `INSERT INTO gateway_registry (key_hash, organization_id, gateway_id) VALUES ($1, $2, $3)`,
+        [keyHash, organizationId, created.id]
+      );
+    } catch (registryErr) {
+      console.error('[gateways:post] gateway_registry insert failed, rolling back gateway row', registryErr);
+      try {
+        await pool.query(`DELETE FROM gateways WHERE id = $1`, [created.id]);
+      } catch (cleanupErr) {
+        console.error('[gateways:post] CRITICAL: compensating cleanup also failed -- orphaned gateway row', created.id, cleanupErr);
+      }
+      res.status(500).json({ error: 'Failed to provision gateway key; gateway was not created' });
+      return;
+    }
+
+    res.status(201).json({
+      gateway: normalizeGatewayConfig(created),
+      gateway_key: plaintextKey,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error';
     console.error('[gateways:post] DB error', e);
@@ -321,5 +359,3 @@ router.put('/:gatewayId', async (req: Request, res: Response) => {
 });
 
 export default router;
-
-
