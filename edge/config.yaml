@@ -20,6 +20,9 @@ cloud:
   sync_interval_seconds: 30
   timeout_seconds: 10
   retry_limit: 3
+  # api_key is NOT set here. This file is tracked in git -- a real key here
+  # would be committed to history. Set the GATEWAY_API_KEY environment
+  # variable instead (e.g. in a local .env file, which is gitignored).
 
 database:
   path: "gateway_buffer.db"
@@ -38,7 +41,6 @@ sensors:
     - id: sim_group_1
       adapter: simulator
       # simulator-specific parameters live in sensor_simulator.py
-
 
 alarms:
   local_panel_modbus: false

@@ -21,3 +21,4 @@ run*.txt
 
 test_output.txt
 test_backfill.csv
+gateway_buffer.db
